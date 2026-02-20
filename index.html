@@ -591,22 +591,23 @@
         }
 
         .sold-out-badge {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.6);
-            color: #FFF;
-            padding: 8px 16px;
-            font-size: 10px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 5;
-            pointer-events: none;
-            border: 0.5px solid rgba(255, 255, 255, 0.3);
-            font-weight: 600;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            background: rgba(0, 0, 0, 0.8) !important;
+            color: #FFF !important;
+            padding: 12px 24px !important;
+            font-size: 12px !important;
+            letter-spacing: 0.2em !important;
+            text-transform: uppercase !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            z-index: 9999 !important;
+            pointer-events: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            font-weight: 700 !important;
+            display: block !important;
         }
 
         .img-box.pre-order img {
@@ -1551,7 +1552,7 @@
                 // Build grouped catalog
                 groupedCatalog = groupCatalog(catalog);
 
-                console.log(`Dlux Boutique v1.5: ${catalog.length} artículos → ${groupedCatalog.length} modelos agrupados.`);
+                console.log(`Dlux Boutique v1.6: ${catalog.length} artículos → ${groupedCatalog.length} modelos agrupados.`);
                 const agotados = catalog.filter(i => parseInt(i.STOCK) === 0 || !i.STOCK);
                 if (agotados.length > 0) {
                     console.log(`📌 Detectados ${agotados.length} artículos para Venta bajo Pedido:`, agotados.map(i => i.NOMBRE_PRENDA));
@@ -2699,8 +2700,8 @@
         // SERVICE WORKER REGISTRATION
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                console.log("Dlux Boutique v1.5 (Forced Update)");
-                navigator.serviceWorker.register('./sw.js?v=1.5')
+                console.log("Dlux Boutique v1.6 (Deep Cache Purge)");
+                navigator.serviceWorker.register('./sw.js?v=1.6')
                     .then(reg => console.log('DLUX PWA: Service Worker registrado.'))
                     .catch(err => console.log('DLUX PWA: Error al registrar SW:', err));
             });
