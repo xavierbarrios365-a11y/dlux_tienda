@@ -1388,6 +1388,11 @@
         let currentPage = 1;
         const itemsPerPage = 10;
 
+        // Grouping State
+        let groupedCatalog = []; // Array of product groups
+        let activeGroup = null;  // Current group in modal
+        let activeVariantIdx = 0; // Index of selected color variant within the group
+
         // Global storage for checkout step
         let _tempPdfBlob = null;
         let _tempMessage = "";
@@ -1457,7 +1462,10 @@
                     COLORS: i.COLORES ? i.COLORES.toString().split(',').map(c => c.trim()).filter(Boolean) : ['Único']
                 })).reverse(); // Newest first
 
-                console.log(`DLUX Exclusive: Cargados ${catalog.length} artículos de alta gama.`);
+                // Build grouped catalog
+                groupedCatalog = groupCatalog(catalog);
+
+                console.log(`DLUX Exclusive: ${catalog.length} artículos → ${groupedCatalog.length} modelos agrupados.`);
                 updateCartBadge();
                 initHeroSlider();
                 renderUI();
@@ -1465,6 +1473,43 @@
                 console.error("Error de conectividad:", e);
                 renderError();
             }
+        }
+
+        function groupCatalog(items) {
+            const map = new Map();
+            items.forEach(item => {
+                const key = `${(item.NOMBRE_PRENDA || '').trim().toUpperCase()}|||${(item.MARCA || '').trim().toUpperCase()}`;
+                if (!map.has(key)) {
+                    map.set(key, {
+                        key: key,
+                        name: item.NOMBRE_PRENDA,
+                        marca: item.MARCA || 'DLUX',
+                        linea: item.LINEA,
+                        categoria: item.CATEGORIA,
+                        variants: []
+                    });
+                }
+                map.get(key).variants.push(item);
+            });
+
+            // Convert to array, compute aggregate fields
+            return Array.from(map.values()).map(g => {
+                const prices = g.variants.map(v => parseFloat(v.PRECIO_VENTA));
+                const totalStock = g.variants.reduce((a, v) => a + parseInt(v.STOCK), 0);
+                const allColors = [];
+                g.variants.forEach(v => {
+                    v.COLORS.forEach(c => {
+                        if (!allColors.includes(c)) allColors.push(c);
+                    });
+                });
+                g.minPrice = Math.min(...prices);
+                g.maxPrice = Math.max(...prices);
+                g.totalStock = totalStock;
+                g.allColors = allColors;
+                g.mainImg = g.variants[0].IMG && g.variants[0].IMG.length > 0 ? g.variants[0].IMG[0] : null;
+                g.primaryId = g.variants[0].ID_SISTEMA;
+                return g;
+            });
         }
 
         function renderUI() {
@@ -1495,34 +1540,34 @@
             const empty = document.getElementById('empty');
             const resCount = document.getElementById('results-count');
 
-            let items = catalog;
+            let items = groupedCatalog;
 
             // 1. Filter by LINEA (Advanced Search or Pills)
             if (selectedLineas.length > 0) {
-                items = items.filter(i => {
-                    const iLinea = (i.LINEA || '').toUpperCase().replace(/\s+/g, '');
-                    return selectedLineas.some(sl => sl.toUpperCase().replace(/\s+/g, '') === iLinea);
+                items = items.filter(g => {
+                    const gLinea = (g.linea || '').toUpperCase().replace(/\s+/g, '');
+                    return selectedLineas.some(sl => sl.toUpperCase().replace(/\s+/g, '') === gLinea);
                 });
             } else if (currentCat !== 'TODO') {
                 const cCat = currentCat.toUpperCase().replace(/\s+/g, '');
-                items = items.filter(i => {
-                    const iLinea = (i.LINEA || '').toUpperCase().replace(/\s+/g, '');
-                    const iCat = (i.CATEGORIA || '').toLowerCase().trim();
-                    return iLinea === cCat || (cCat === 'CALZADO' && (iCat === 'footwear' || iLinea === 'CALZADO'));
+                items = items.filter(g => {
+                    const gLinea = (g.linea || '').toUpperCase().replace(/\s+/g, '');
+                    const gCat = (g.categoria || '').toLowerCase().trim();
+                    return gLinea === cCat || (cCat === 'CALZADO' && (gCat === 'footwear' || gLinea === 'CALZADO'));
                 });
             }
 
             // 2. Filter by MARCA (Advanced Search)
             if (selectedMarcas.length > 0) {
-                items = items.filter(i => selectedMarcas.includes(i.MARCA));
+                items = items.filter(g => selectedMarcas.includes(g.marca));
             }
 
             // 3. Search Query
             const activeQuery = (currentSearchQuery || '').toLowerCase().trim();
             if (activeQuery) {
                 const terms = activeQuery.split(/\s+/).filter(t => t.length > 0);
-                items = items.filter(i => {
-                    const text = `${i.NOMBRE_PRENDA} ${i.MARCA} ${i.SKU} ${i.CATEGORIA} ${i.LINEA}`.toLowerCase();
+                items = items.filter(g => {
+                    const text = `${g.name} ${g.marca} ${g.linea} ${g.categoria} ${g.variants.map(v => v.SKU).join(' ')}`.toLowerCase();
                     return terms.every(term => text.includes(term));
                 });
             }
@@ -1535,8 +1580,6 @@
                 document.getElementById('pagination-controls').style.display = 'none';
                 return;
             }
-
-            // No second reverse needed — catalog already reversed in init()
 
             // Apply Pagination
             const totalPages = Math.ceil(items.length / itemsPerPage);
@@ -1559,34 +1602,41 @@
             empty.style.display = 'none';
             cont.style.display = 'block';
 
-            cont.innerHTML = `<div class="grid-premium">${paginatedItems.map((i, idx) => {
-                const mainImg = i.IMG && i.IMG.length > 0 ? i.IMG[0] : null;
+            cont.innerHTML = `<div class="grid-premium">${paginatedItems.map((g, idx) => {
+                const mainImg = g.mainImg;
+                const priceLabel = g.minPrice === g.maxPrice
+                    ? `$${g.minPrice.toFixed(0)}`
+                    : `Desde $${g.minPrice.toFixed(0)}`;
+                const colorCount = g.allColors.length;
+                const colorLabel = colorCount > 1 ? `${colorCount} colores` : '';
                 return `
-                <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openModal('${i.ID_SISTEMA}')">
+                <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openGroupModal('${g.key.replace(/'/g, & quot; \\& apos;& quot;)}')">
                     <div class="img-box">
                         ${mainImg
-                        ? `<img src="${typeof mainImg === 'string' ? mainImg : mainImg.primary}" 
-                                alt="${i.NOMBRE_PRENDA}" 
+                    ? `<img src="${typeof mainImg === 'string' ? mainImg : mainImg.primary}" 
+                                alt="${g.name}" 
                                 referrerpolicy="no-referrer"
                                 onload="this.parentElement.classList.add('loaded')"
                                 onerror="handleImgError(this, ${JSON.stringify(mainImg).replace(/"/g, '&quot;')})">
                                <div class="img-fallback" style="display:none"><span class="material-symbols-outlined">identity_platform</span><p>PRIVATE MEDIA</p></div>`
-                        : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
-                    }
-                        <div class="price-tag">$${parseFloat(i.PRECIO_VENTA).toFixed(0)}</div>
-                        <button class="add-quick" onclick="event.stopPropagation(); openModal('${i.ID_SISTEMA}')">
-                            <span class="material-symbols-outlined">add</span>
-                        </button>
-                    </div>
-                    <div class="info-premium">
-                        <span class="product-label">${i.MARCA || 'DLUX'}</span>
-                        <h3 class="product-title">${i.NOMBRE_PRENDA}</h3>
-                        <div class="product-status">
-                            <div class="dot ${parseInt(i.STOCK) < 5 ? 'dot-red' : 'dot-green'}"></div>
-                            <span class="status-text">${parseInt(i.STOCK) < 5 ? 'Últimas piezas' : 'Disponible'}</span>
-                        </div>
-                    </div>
+                    : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
+                }
+                        <div class="price-tag">${priceLabel}</div>
+                        <button class="add-quick" onclick="event.stopPropagation(); openGroupModal('${g.key.replace(/'/g, & quot; \\& apos;& quot;)
+        } ')">
+            < span class="material-symbols-outlined" > add</span >
+                        </button >
+                    </div >
+            <div class="info-premium">
+                <span class="product-label">${g.marca}</span>
+                <h3 class="product-title">${g.name}</h3>
+                <div class="product-status">
+                    ${colorLabel ? `<span style="font-size:9px; color:var(--liquid-gold); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">${colorLabel}</span>` : ''}
+                    <div class="dot ${g.totalStock < 5 ? 'dot-red' : 'dot-green'}"></div>
+                    <span class="status-text">${g.totalStock < 5 ? 'Últimas piezas' : 'Disponible'}</span>
                 </div>
+            </div>
+                </div >
             `;
             }).join('')}</div>`;
         }
@@ -1818,100 +1868,98 @@
             }
         }
 
-        function openModal(id) {
-            const item = catalog.find(i => String(i.ID_SISTEMA) == String(id));
-            if (!item) {
-                console.error("DLUX: ID no encontrado", id);
+        function openGroupModal(key) {
+            const group = groupedCatalog.find(g => g.key === key);
+            if (!group || group.variants.length === 0) {
+                console.error("DLUX: Grupo no encontrado", key);
                 closeAll();
                 return;
             }
-            pending = item;
-            selectedSize = item.SIZES.length > 1 ? null : (item.SIZES[0] || 'Única');
-            selectedColor = item.COLORS.length > 1 ? null : (item.COLORS[0] || 'Original');
+            activeGroup = group;
+            activeVariantIdx = 0;
+            selectVariant(0);
 
-            document.getElementById('m-name').innerText = item.NOMBRE_PRENDA;
-            document.getElementById('m-price').innerText = `$${item.PRECIO_VENTA}`;
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+        }
 
-            // Render Gallery
+        // Also keep openModal for slider clicks (which use ID_SISTEMA)
+        function openModal(id) {
+            // Find which group contains this ID
+            const group = groupedCatalog.find(g => g.variants.some(v => String(v.ID_SISTEMA) == String(id)));
+            if (!group) {
+                console.error("DLUX: ID no encontrado en grupos", id);
+                closeAll();
+                return;
+            }
+            activeGroup = group;
+            activeVariantIdx = group.variants.findIndex(v => String(v.ID_SISTEMA) == String(id));
+            if (activeVariantIdx < 0) activeVariantIdx = 0;
+            selectVariant(activeVariantIdx);
+
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+        }
+
+        function selectVariant(idx) {
+            activeVariantIdx = idx;
+            const variant = activeGroup.variants[idx];
+            pending = variant;
+            selectedSize = variant.SIZES.length > 1 ? null : (variant.SIZES[0] || 'Única');
+            selectedColor = variant.COLORS[0] || 'Original';
+
+            document.getElementById('m-name').innerText = activeGroup.name;
+            document.getElementById('m-price').innerText = `$${parseFloat(variant.PRECIO_VENTA).toFixed(0)}`;
+
+            // Render Gallery for this variant
             const gallery = document.getElementById('m-gallery');
-            if (item.IMG && item.IMG.length > 1) {
+            if (variant.IMG && variant.IMG.length > 1) {
                 gallery.style.display = 'flex';
-                gallery.innerHTML = item.IMG.map(img => `
+                gallery.innerHTML = variant.IMG.map(img => `
                     <div style="min-width: 200px; height: 260px; border-radius: 16px; overflow: hidden; background: #F5F5F5;">
                         <img src="${typeof img === 'string' ? img : img.primary}" 
                              style="width: 100%; height: 100%; object-fit: cover;"
                              onerror="handleImgError(this, ${JSON.stringify(img).replace(/"/g, '&quot;')})">
                     </div>
                 `).join('');
+            } else if (variant.IMG && variant.IMG.length === 1) {
+                const img = variant.IMG[0];
+                gallery.style.display = 'flex';
+                gallery.innerHTML = `
+                    <div style="min-width: 100%; height: 300px; border-radius: 16px; overflow: hidden; background: #F5F5F5;">
+                        <img src="${typeof img === 'string' ? img : img.primary}" 
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="handleImgError(this, ${JSON.stringify(img).replace(/"/g, '&quot;')})">
+                    </div>
+                `;
             } else {
                 gallery.style.display = 'none';
             }
 
+            // Render Sizes for this variant
             const sGrid = document.getElementById('m-sizes');
-            sGrid.innerHTML = item.SIZES.length > 0
-                ? item.SIZES.map(s => `<button class="variant-btn ${selectedSize == s ? 'selected' : ''}" onclick="pickS(this, '${s}')">${s}</button>`).join('')
+            sGrid.innerHTML = variant.SIZES.length > 0
+                ? variant.SIZES.map(s => `<button class="variant-btn ${selectedSize == s ? 'selected' : ''}" onclick="pickS(this, '${s}')">${s}</button>`).join('')
                 : `<button class="variant-btn selected" onclick="pickS(this, 'Única')">N/A</button>`;
 
+            // Render Color selector across ALL variants in the group
             const cGrid = document.getElementById('m-colors');
-            cGrid.innerHTML = item.COLORS.map(c => `<button class="variant-btn ${selectedColor == c ? 'selected' : ''}" onclick="pickC(this, '${c}')">${c}</button>`).join('');
-
-            document.getElementById('modal').classList.add('active');
-            document.getElementById('overlay').classList.add('active');
-            updateModalBtn();
-        }
-
-        function pickS(btn, s) {
-            btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedSize = s;
-            updateModalBtn();
-        }
-
-        function pickC(btn, c) {
-            btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedColor = c;
-            updateModalBtn();
-        }
-
-        function updateModalBtn() {
-            const btn = document.getElementById('m-confirm');
-            if (selectedSize && selectedColor) {
-                btn.disabled = false;
-                btn.onclick = addToCart;
+            if (activeGroup.variants.length > 1) {
+                cGrid.innerHTML = activeGroup.variants.map((v, vi) => {
+                    const colorName = v.COLORS[0] || 'Original';
+                    const isActive = vi === activeVariantIdx;
+                    return `<button class="variant-btn ${isActive ? 'selected' : ''}" onclick="switchColor(${vi})">${colorName}</button>`;
+                }).join('');
             } else {
-                btn.disabled = true;
+                // Single variant — show its colors normally
+                cGrid.innerHTML = variant.COLORS.map(c => `<button class="variant-btn ${selectedColor == c ? 'selected' : ''}" onclick="pickC(this, '${c}')">${c}</button>`).join('');
             }
+
+            updateModalBtn();
         }
 
-        function addToCart() {
-            const stockAvailable = parseInt(pending.STOCK) || 0;
-            const existing = cart.find(i => i.id == pending.ID_SISTEMA && i.s == selectedSize && i.c == selectedColor);
-            const currentQty = existing ? existing.q : 0;
-
-            if (currentQty + 1 > stockAvailable) {
-                showToast(`Stock insuficiente (Solo ${stockAvailable} disponible)`);
-                return;
-            }
-
-            if (existing) {
-                existing.q++;
-            } else {
-                cart.push({
-                    id: pending.ID_SISTEMA,
-                    sku: pending.SKU || pending.ID_SISTEMA,
-                    n: pending.NOMBRE_PRENDA,
-                    p: parseFloat(pending.PRECIO_VENTA),
-                    img: (pending.IMG && pending.IMG.length > 0) ? pending.IMG[0] : null,
-                    s: selectedSize,
-                    c: selectedColor,
-                    q: 1
-                });
-            }
-            closeAll();
-            updateCartBadge();
-            showToast(`"${pending.NOMBRE_PRENDA}" agregado a la bolsa.`);
-            toggleCart();
+        function switchColor(variantIdx) {
+            selectVariant(variantIdx);
         }
 
         function updateCartBadge() {
