@@ -1,9 +1,10 @@
-const CACHE_NAME = 'dlux-v1.3';
+const CACHE_NAME = 'dlux-v1.4';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './logo.png'
+  './logo.png',
+  './logo_dlux.png'
 ];
 
 self.addEventListener('install', (e) => {

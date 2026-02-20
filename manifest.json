@@ -1,7 +1,7 @@
 {
-    "name": "D LUX | Alta Costura",
-    "short_name": "D LUX",
-    "description": "Tienda de Lujo Exclusiva - Exclusividad & Elegancia",
+    "name": "Dlux Boutique | Tienda Exclusiva",
+    "short_name": "Dlux Boutique",
+    "description": "Moda, exclusividad y elegancia en un solo lugar. Una experiencia de lujo diseñada para ti.",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#FFFFFF",
