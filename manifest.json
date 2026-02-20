@@ -2,7 +2,7 @@
     "name": "D LUX | Alta Costura",
     "short_name": "D LUX",
     "description": "Tienda de Lujo Exclusiva - Exclusividad & Elegancia",
-    "start_url": ".",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#FFFFFF",
     "theme_color": "#000000",
