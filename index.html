@@ -1602,6 +1602,7 @@
             empty.style.display = 'none';
             cont.style.display = 'block';
 
+
             cont.innerHTML = `<div class="grid-premium">${paginatedItems.map((g, idx) => {
                 const mainImg = g.mainImg;
                 const priceLabel = g.minPrice === g.maxPrice
@@ -1609,34 +1610,34 @@
                     : `Desde $${g.minPrice.toFixed(0)}`;
                 const colorCount = g.allColors.length;
                 const colorLabel = colorCount > 1 ? `${colorCount} colores` : '';
+                const gIdx = groupedCatalog.indexOf(g);
                 return `
-                <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openGroupModal('${g.key.replace(/'/g, & quot; \\& apos;& quot;)}')">
+                <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openGroupModal(${gIdx})">
                     <div class="img-box">
                         ${mainImg
-                    ? `<img src="${typeof mainImg === 'string' ? mainImg : mainImg.primary}" 
+                        ? `<img src="${typeof mainImg === 'string' ? mainImg : mainImg.primary}" 
                                 alt="${g.name}" 
                                 referrerpolicy="no-referrer"
                                 onload="this.parentElement.classList.add('loaded')"
                                 onerror="handleImgError(this, ${JSON.stringify(mainImg).replace(/"/g, '&quot;')})">
                                <div class="img-fallback" style="display:none"><span class="material-symbols-outlined">identity_platform</span><p>PRIVATE MEDIA</p></div>`
-                    : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
-                }
+                        : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
+                    }
                         <div class="price-tag">${priceLabel}</div>
-                        <button class="add-quick" onclick="event.stopPropagation(); openGroupModal('${g.key.replace(/'/g, & quot; \\& apos;& quot;)
-        } ')">
-            < span class="material-symbols-outlined" > add</span >
-                        </button >
-                    </div >
-            <div class="info-premium">
-                <span class="product-label">${g.marca}</span>
-                <h3 class="product-title">${g.name}</h3>
-                <div class="product-status">
-                    ${colorLabel ? `<span style="font-size:9px; color:var(--liquid-gold); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">${colorLabel}</span>` : ''}
-                    <div class="dot ${g.totalStock < 5 ? 'dot-red' : 'dot-green'}"></div>
-                    <span class="status-text">${g.totalStock < 5 ? 'Últimas piezas' : 'Disponible'}</span>
+                        <button class="add-quick" onclick="event.stopPropagation(); openGroupModal(${gIdx})">
+                            <span class="material-symbols-outlined">add</span>
+                        </button>
+                    </div>
+                    <div class="info-premium">
+                        <span class="product-label">${g.marca}</span>
+                        <h3 class="product-title">${g.name}</h3>
+                        <div class="product-status">
+                            ${colorLabel ? `<span style="font-size:9px; color:var(--liquid-gold); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">${colorLabel}</span>` : ''}
+                            <div class="dot ${g.totalStock < 5 ? 'dot-red' : 'dot-green'}"></div>
+                            <span class="status-text">${g.totalStock < 5 ? 'Últimas piezas' : 'Disponible'}</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-                </div >
             `;
             }).join('')}</div>`;
         }
@@ -1868,10 +1869,10 @@
             }
         }
 
-        function openGroupModal(key) {
-            const group = groupedCatalog.find(g => g.key === key);
+        function openGroupModal(idx) {
+            const group = groupedCatalog[idx];
             if (!group || group.variants.length === 0) {
-                console.error("DLUX: Grupo no encontrado", key);
+                console.error("DLUX: Grupo no encontrado", idx);
                 closeAll();
                 return;
             }
@@ -1960,6 +1961,60 @@
 
         function switchColor(variantIdx) {
             selectVariant(variantIdx);
+        }
+
+        function pickS(btn, s) {
+            btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedSize = s;
+            updateModalBtn();
+        }
+
+        function pickC(btn, c) {
+            btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedColor = c;
+            updateModalBtn();
+        }
+
+        function updateModalBtn() {
+            const btn = document.getElementById('m-confirm');
+            if (selectedSize && selectedColor) {
+                btn.disabled = false;
+                btn.onclick = addToCart;
+            } else {
+                btn.disabled = true;
+            }
+        }
+
+        function addToCart() {
+            const stockAvailable = parseInt(pending.STOCK) || 0;
+            const existing = cart.find(i => i.id == pending.ID_SISTEMA && i.s == selectedSize && i.c == selectedColor);
+            const currentQty = existing ? existing.q : 0;
+
+            if (currentQty + 1 > stockAvailable) {
+                showToast(`Stock insuficiente (Solo ${stockAvailable} disponible)`);
+                return;
+            }
+
+            if (existing) {
+                existing.q++;
+            } else {
+                cart.push({
+                    id: pending.ID_SISTEMA,
+                    sku: pending.SKU || pending.ID_SISTEMA,
+                    n: pending.NOMBRE_PRENDA,
+                    p: parseFloat(pending.PRECIO_VENTA),
+                    img: (pending.IMG && pending.IMG.length > 0) ? pending.IMG[0] : null,
+                    s: selectedSize,
+                    c: selectedColor,
+                    q: 1
+                });
+            }
+            closeAll();
+            updateCartBadge();
+            showToast(`"${pending.NOMBRE_PRENDA}" agregado a la bolsa.`);
+            toggleCart();
         }
 
         function updateCartBadge() {
