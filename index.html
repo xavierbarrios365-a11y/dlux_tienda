@@ -801,11 +801,14 @@
             transform: translate(-50%, 120%);
             width: calc(100% - 32px);
             max-width: 500px;
+            max-height: 85dvh;
+            overflow-y: auto;
             background: #FFF;
             border: 1px solid #EEE;
             border-radius: 24px;
             z-index: 2100;
-            padding: 40px;
+            padding: 32px 24px;
+            /* Reduced padding for mobile */
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 20px 80px rgba(0, 0, 0, 0.15);
         }
@@ -820,10 +823,20 @@
 
         .modal-handle {
             width: 40px;
-            height: 3px;
-            background: #333;
+            height: 4px;
+            background: #E0E0E0;
             border-radius: 2px;
-            margin: 0 auto 24px;
+            margin: -12px auto 24px;
+        }
+
+        /* Responsive Modal Fixes */
+        @media (max-width: 767px) {
+            .modal-premium {
+                padding-bottom: calc(32px + var(--safe-bottom));
+            }
+            .drawer-luxury {
+                padding-bottom: var(--safe-bottom);
+            }
         }
 
         .variant-grid {
@@ -1067,17 +1080,44 @@
                         </div>
                     </div>
 
-                    <div class="form-group"
-                        style="flex-direction: row; align-items: center; gap: 12px; margin-top: 10px;">
-                        <input type="checkbox" id="chk-invoice" style="width: 20px; height: 20px; accent-color: #000;">
-                        <label class="form-label" style="margin-bottom: 0;">¿Desea factura para su empresa?</label>
+                    <div id="checkout-actions">
+                        <div class="form-group"
+                            style="flex-direction: row; align-items: center; gap: 12px; margin-top: 10px;">
+                            <input type="checkbox" id="chk-invoice" style="width: 20px; height: 20px; accent-color: #000;">
+                            <label class="form-label" style="margin-bottom: 0;">¿Desea factura para su empresa?</label>
+                        </div>
+
+                        <button class="luxury-btn" style="margin-top: 32px; height: 64px;" onclick="processFinalOrder()">
+                            CONFIRMAR Y FINALIZAR $ <span id="chk-total">0</span>
+                        </button>
+                        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 12px;">Al confirmar, se generará
+                            su factura PDF y se abrirá WhatsApp.</p>
                     </div>
 
-                    <button class="luxury-btn" style="margin-top: 20px; height: 64px;" onclick="processFinalOrder()">
-                        CONFIRMAR Y FINALIZAR $ <span id="chk-total">0</span>
-                    </button>
-                    <p style="font-size: 9px; color: var(--text-muted); text-align: center;">Al confirmar, se generará
-                        su factura PDF y se abrirá WhatsApp.</p>
+                    <!-- Final Choice Screen (Hidden by default) -->
+                    <div id="checkout-choice" style="display:none; flex-direction: column; gap: 20px; text-align: center; padding-top: 20px;">
+                        <span class="material-symbols-outlined" style="font-size:56px; color:#22c55e;">check_circle</span>
+                        <h3 class="serif" style="font-size:24px;">¡Pedido Preparado!</h3>
+                        <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Seleccione cómo desea finalizar el proceso:</p>
+                        
+                        <button class="luxury-btn" style="background:#25D366; display: flex; align-items: center; justify-content: center; gap: 12px;" onclick="finalizeLegacyWhatsApp()">
+                            <span class="material-symbols-outlined">chat</span>
+                            ENVIAR DIRECTO (WhatsApp)
+                        </button>
+                        
+                        <button class="luxury-btn" style="background:#000; display: flex; align-items: center; justify-content: center; gap: 12px;" onclick="finalizeSharePDF()">
+                            <span class="material-symbols-outlined">share</span>
+                            COMPARTIR CON FACTURA PDF
+                        </button>
+
+                        <button class="pill" style="margin-top: 20px; border-bottom: 1px solid #CCC; width: fit-content; align-self: center;" onclick="backToEdit()">
+                            REGRESAR Y EDITAR
+                        </button>
+
+                        <p style="font-size:10px; color:var(--text-muted); margin-top: 24px; padding: 0 20px; line-height: 1.5;">
+                            <b>Tip:</b> La opción "Enviar Directo" es para un contacto rápido. Use "Compartir" para enviar el archivo PDF profesional.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1260,6 +1300,12 @@
         let pending = null;
         let selectedSize = null;
         let selectedColor = null;
+
+        // Global storage for checkout step
+        let _tempPdfBlob = null;
+        let _tempMessage = "";
+        let _tempOrderId = "";
+        let _tempFileName = "";
 
         /**
          * The ultra-reliable Google Drive image fix.
@@ -1753,32 +1799,23 @@
             if (deliveryMode === 'RETIRO') {
                 deliveryDetail = "🏬 Retiro en tienda: " + (document.getElementById('chk-time').value || "Horario por confirmar");
             } else if (deliveryMode === 'DELIVERY') {
-                deliveryDetail = "🛵 Delivery Local: " + (document.getElementById('chk-address').value || "Dirección pendiente");
-                if (!document.getElementById('chk-address').value) {
-                    showToast("Por favor ingrese la dirección de delivery.");
-                    return;
-                }
+                const addr = document.getElementById('chk-address').value;
+                if (!addr) { showToast("Por favor ingrese la dirección."); return; }
+                deliveryDetail = "🛵 Delivery Local: " + addr;
             } else if (deliveryMode === 'ENVIO') {
                 const agency = document.getElementById('chk-agency').value;
-                const dest = document.getElementById('chk-destination').value || "Destino por confirmar";
+                const dest = document.getElementById('chk-destination').value;
+                if (!dest) { showToast("Por favor ingrese el destino."); return; }
                 deliveryDetail = `📦 Envío Nacional por ${agency} a ${dest}`;
-                if (!document.getElementById('chk-destination').value) {
-                    showToast("Por favor ingrese el destino del envío.");
-                    return;
-                }
             }
 
-            const customerData = {
-                name,
-                idDoc,
-                payment,
-                needsInvoice,
-                deliveryDetail,
-                deliveryMode
-            };
+            const customerData = { name, idDoc, payment, needsInvoice, deliveryDetail, deliveryMode };
 
-            // 1. Generate PDF (Now returns a Blob for sharing)
-            const { pdfBlob, orderId } = generateInvoice(customerData);
+            // 1. Generate PDF (Now stored globally)
+            const result = generateInvoice(customerData);
+            _tempPdfBlob = result.pdfBlob;
+            _tempOrderId = result.orderId;
+            _tempFileName = `DLUX_Pedido_${_tempOrderId}.pdf`;
 
             // 2. Prepare Professional WhatsApp Message
             let total = 0;
@@ -1808,52 +1845,62 @@
             m += `💰 *VALOR TOTAL: $${total.toFixed(0)}*\n`;
             m += `───────────────────────────\n\n`;
             m += `📜 _Adjunto factura PDF oficial. Por favor confirmar disponibilidad para proceder con el pago._`;
+            _tempMessage = m;
 
-            // 3. Share or Fallback
-            const fileName = `DLUX_Pedido_${orderId}.pdf`;
-            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            // 3. Show refined UI instead of clearing innerHTML
+            document.getElementById('checkout-actions').style.display = 'none';
+            document.querySelector('.checkout-form .form-group:has(#chk-name)').parentElement.querySelectorAll('.form-group').forEach(el => el.style.display = 'none');
+            document.getElementById('checkout-choice').style.display = 'flex';
+            
+            // Scroll to top of drawer to see success message
+            document.getElementById('checkout-drawer').querySelector('.viewport').scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
+        function backToEdit() {
+            document.getElementById('checkout-choice').style.display = 'none';
+            document.getElementById('checkout-actions').style.display = 'block';
+            document.querySelector('.checkout-form').querySelectorAll('.form-group').forEach(el => el.style.display = 'flex');
+        }
+
+        function finalizeLegacyWhatsApp() {
+            legacyWhatsApp(_tempMessage, null, '');
+        }
+
+        async function finalizeSharePDF() {
+            const file = new File([_tempPdfBlob], _tempFileName, { type: 'application/pdf' });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
                         files: [file],
-                        title: `Pedido D LUX #${orderId}`,
-                        text: m
+                        title: `Pedido D LUX #${_tempOrderId}`,
+                        text: _tempMessage
                     });
-                    // ONLY clear if sharing was successful and we didn't throw
                     finalizeOrder();
                 } catch (err) {
-                    console.log("Share canceled or failed:", err);
-                    // Do NOT clear cart if they just canceled the share sheet
-                    if (err.name !== 'AbortError') {
-                        legacyWhatsApp(m, pdfBlob, fileName);
-                    }
+                    if (err.name !== 'AbortError') showToast("Error al compartir.");
                 }
             } else {
-                legacyWhatsApp(m, pdfBlob, fileName);
+                legacyWhatsApp(_tempMessage, _tempPdfBlob, _tempFileName);
             }
         }
 
         function legacyWhatsApp(message, pdfBlob, fileName) {
-            // Save PDF locally
-            const url = window.URL.createObjectURL(pdfBlob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
+            if (pdfBlob) {
+                const url = window.URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
 
             // Open WhatsApp Link
             window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`, '_blank');
-            // In legacy mode, we can't tell if they sent it, 
-            // but we shouldn't clear it INSTANTLY so they can go back if it failed to open
-            showToast("Abriendo WhatsApp... Por favor no cierre la app.");
-
-            // Provide a manual clear button in the UI or wait?
-            // For now, let's just NOT auto-clear in legacy, or do it after a long timeout.
-            // Better: Let the user clear it manually or keep it until they start a new one.
+            showToast("Procesando pedido...");
+            
+            // On legacy, we can't detect return, but we can finalize after a delay or manually
+            finalizeOrder();
         }
 
         function finalizeOrder() {
