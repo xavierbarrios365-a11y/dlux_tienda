@@ -1,0 +1,17 @@
+{
+    "name": "D LUX ATELIER | Alta Costura",
+    "short_name": "D LUX",
+    "description": "Tienda de Lujo Exclusiva - Alta Costura & Artículos de Lujo",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#FFFFFF",
+    "theme_color": "#000000",
+    "icons": [
+        {
+            "src": "./logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

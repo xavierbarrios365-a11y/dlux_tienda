@@ -5,9 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>D L U X | Tienda de Lujo Exclusiva</title>
+    <title>D LUX ATELIER | Alta Costura</title>
     <meta name="description"
-        content="DLUX - La cima de la alta costura. Colecciones ultra-exclusivas seleccionadas para la élite moderna.">
+        content="D LUX ATELIER - La cima de la alta costura. Colecciones ultra-exclusivas seleccionadas para la élite moderna.">
+
+    <!-- PWA & Assets -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#FFFFFF">
+
+    <!-- Open Graph / Premium Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="D LUX ATELIER | Exclusividad">
+    <meta property="og:description" content="Colecciones de lujo y alta costura seleccionadas a mano.">
+    <meta property="og:image" content="https://xavierbarrios365-a11y.github.io/dlux_tienda/logo.png">
 
     <!-- Premium Fonts -->
     <link
@@ -1443,23 +1455,55 @@
 
             cont.innerHTML = `
                 <div class="dash-premium">
-                    <h2 class="serif" style="font-size:40px; margin-bottom:48px; letter-spacing: -0.02em;">Atelier Insight</h2>
-                    <div class="dash-card" style="background:none; border:none; border-left: 2px solid var(--liquid-gold); border-radius:0; padding: 0 0 0 24px; margin-bottom:48px;">
-                        <p class="dash-label">Valor Total</p>
-                        <p class="dash-val" style="font-size:48px; font-weight:300; letter-spacing:-0.03em;">$${totalV.toLocaleString()}</p>
+                    <div style="text-align:center; margin-bottom:48px;">
+                        <img src="logo.png" style="width:120px; height:120px; border-radius:50%; margin-bottom:24px; border:1px solid #EEE;">
+                        <h2 class="serif" style="font-size:32px; letter-spacing: -0.02em;">D LUX ATELIER</h2>
+                        <p style="font-size:10px; color:var(--text-muted); letter-spacing:0.3em; text-transform:uppercase; margin-top:8px;">Exclusividad & Alta Costura</p>
                     </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px;">
-                        <div style="border-top: 0.5px solid #222; padding-top:16px;">
-                            <p class="dash-label">Modelos</p>
-                            <p style="font-size:24px; font-weight:300; margin-top:8px;">${catalog.length}</p>
-                        </div>
-                        <div style="border-top: 0.5px solid #222; padding-top:16px;">
-                            <p class="dash-label">Stock</p>
-                            <p style="font-size:24px; font-weight:300; margin-top:8px;">${totalS}</p>
-                        </div>
+
+                    <div style="display:flex; flex-direction:column; gap:40px;">
+                        <section>
+                            <h3 class="dash-label" style="margin-bottom:16px;">El Atelier</h3>
+                            <p style="font-size:14px; line-height:1.6; font-weight:300; color:#333;">
+                                D LUX no es solo una tienda, es una curaduría de estilo. 
+                                Nuestra misión es vestir a la élite con piezas que trasciendan las tendencias, 
+                                manteniendo la artesanía y la exclusividad en el centro de todo lo que hacemos.
+                            </p>
+                        </section>
+
+                        <section style="display:grid; grid-template-columns:1fr; gap:24px; border-top:0.5px solid #EEE; padding-top:32px;">
+                            <div>
+                                <h3 class="dash-label">Contacto Directo</h3>
+                                <p style="font-size:16px; margin-top:8px;">+58 424-5637616</p>
+                            </div>
+                            <div>
+                                <h3 class="dash-label">Ubicación</h3>
+                                <p style="font-size:16px; margin-top:8px;">Atelier Privado - Araure, Portuguesa</p>
+                                <p style="font-size:10px; color:var(--text-muted); margin-top:4px;">Atención bajo cita previa</p>
+                            </div>
+                        </section>
+
+                        <section style="border-top:0.5px solid #EEE; padding-top:32px;">
+                            <h3 class="dash-label" style="margin-bottom:24px;">Atelier Insight (Admin)</h3>
+                            <div class="dash-card" style="background:none; border:none; border-left: 2px solid var(--liquid-gold); border-radius:0; padding: 0 0 0 24px; margin-bottom:32px;">
+                                <p class="dash-label">Valor del Inventario</p>
+                                <p class="dash-val" style="font-size:40px; font-weight:300; letter-spacing:-0.03em;">$${totalV.toLocaleString()}</p>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px;">
+                                <div>
+                                    <p class="dash-label">Modelos</p>
+                                    <p style="font-size:24px; font-weight:300; margin-top:8px;">${catalog.length}</p>
+                                </div>
+                                <div>
+                                    <p class="dash-label">Stock</p>
+                                    <p style="font-size:24px; font-weight:300; margin-top:8px;">${totalS}</p>
+                                </div>
+                            </div>
+                        </section>
                     </div>
-                    <button class="hero-btn" style="width:100%; margin-top:64px; border:1px solid #333;" onclick="init()">Actualizar Inventario</button>
-                    <p style="text-align:center; margin-top:48px; font-size:8px; color:#333; text-transform:uppercase; letter-spacing:0.4em;">Acceso Restringido</p>
+
+                    <button class="hero-btn" style="width:100%; margin-top:64px; border:1px solid #333;" onclick="init()">Sincronizar Bóveda</button>
+                    <p style="text-align:center; margin-top:48px; font-size:8px; color:#999; text-transform:uppercase; letter-spacing:0.4em;">© 2026 D LUX ATELIER - GLOBAL</p>
                 </div>
             `;
         }
