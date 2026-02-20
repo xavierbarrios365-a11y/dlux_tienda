@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>D LUX ATELIER | Alta Costura</title>
+    <title>D LUX | Alta Costura</title>
     <meta name="description"
-        content="D LUX ATELIER - La cima de la alta costura. Colecciones ultra-exclusivas seleccionadas para la élite moderna.">
+        content="D LUX - La cima de la alta costura. Colecciones ultra-exclusivas seleccionadas para la élite moderna.">
 
     <!-- PWA & Assets -->
     <link rel="manifest" href="manifest.json">
@@ -17,7 +17,7 @@
 
     <!-- Open Graph / Premium Sharing -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="D LUX ATELIER | Exclusividad">
+    <meta property="og:title" content="D LUX | Exclusividad">
     <meta property="og:description" content="Colecciones de lujo y alta costura seleccionadas a mano.">
     <meta property="og:image" content="https://xavierbarrios365-a11y.github.io/dlux_tienda/logo.png">
 
@@ -444,6 +444,8 @@
             font-size: 38px;
             line-height: 1.1;
             margin-bottom: 16px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            /* Improved contrast */
         }
 
         /* ---- NAVIGATION PILLS ---- */
@@ -1211,22 +1213,26 @@
                 </div>
             </div>
 
-            <!-- Product Grid -->
             <div id="grid-container">
                 <div class="grid-premium">
                     <div class="sk-card">
                         <div class="sk-shimmer"></div>
                     </div>
-                    <div class="sk-card">
-                        <div class="sk-shimmer"></div>
-                    </div>
-                    <div class="sk-card">
-                        <div class="sk-shimmer"></div>
-                    </div>
-                    <div class="sk-card">
-                        <div class="sk-shimmer"></div>
-                    </div>
                 </div>
+            </div>
+
+            <!-- Pagination UI -->
+            <div id="pagination-controls"
+                style="display:none; align-items:center; justify-content:center; gap:20px; padding: 20px 0 60px;">
+                <button class="icon-btn" onclick="changePage(-1)" id="pg-prev">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <span id="pg-info"
+                    style="font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">1 de
+                    1</span>
+                <button class="icon-btn" onclick="changePage(1)" id="pg-next">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
             </div>
 
             <div id="empty" style="display:none; padding:100px 40px; text-align:center;">
@@ -1340,6 +1346,10 @@
         let selectedSize = null;
         let selectedColor = null;
 
+        // Pagination State
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
         // Global storage for checkout step
         let _tempPdfBlob = null;
         let _tempMessage = "";
@@ -1407,7 +1417,7 @@
                     IMG: parseImage(i.URL_IMAGEN),
                     SIZES: i.TALLAS_UNIFICADAS ? i.TALLAS_UNIFICADAS.toString().split(',').map(s => s.trim()).filter(Boolean) : [],
                     COLORS: i.COLORES ? i.COLORES.toString().split(',').map(c => c.trim()).filter(Boolean) : ['Único']
-                }));
+                })).reverse(); // Newest first
 
                 console.log(`DLUX Exclusive: Cargados ${catalog.length} artículos de alta gama.`);
                 updateCartBadge();
@@ -1440,6 +1450,7 @@
 
         function filterBy(c) {
             currentCat = c;
+            currentPage = 1; // Reset to page 1 on filter
             renderFilters();
             renderGrid();
             if (c !== 'TODO') scrollToGrid();
@@ -1463,13 +1474,32 @@
             if (items.length === 0) {
                 cont.style.display = 'none';
                 empty.style.display = 'block';
+                document.getElementById('pagination-controls').style.display = 'none';
                 return;
+            }
+
+            // Apply Pagination
+            const totalPages = Math.ceil(items.length / itemsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const paginatedItems = items.slice(start, start + itemsPerPage);
+
+            // Update Pagination UI
+            const pgCtrl = document.getElementById('pagination-controls');
+            if (totalPages > 1) {
+                pgCtrl.style.display = 'flex';
+                document.getElementById('pg-info').innerText = `${currentPage} de ${totalPages}`;
+                document.getElementById('pg-prev').disabled = currentPage === 1;
+                document.getElementById('pg-next').disabled = currentPage === totalPages;
+            } else {
+                pgCtrl.style.display = 'none';
             }
 
             empty.style.display = 'none';
             cont.style.display = 'block';
 
-            cont.innerHTML = `<div class="grid-premium">${items.map((i, idx) => {
+            cont.innerHTML = `<div class="grid-premium">${paginatedItems.map((i, idx) => {
                 const mainImg = i.IMG && i.IMG.length > 0 ? i.IMG[0] : null;
                 return `
                 <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openModal('${i.ID_SISTEMA}')">
@@ -1503,9 +1533,16 @@
 
         function onSearch(v) {
             query = v;
+            currentPage = 1; // Reset to page 1 on search
             document.getElementById('search-close').style.display = v ? 'flex' : 'none';
             document.getElementById('hero').style.display = v ? 'none' : 'block';
             renderGrid();
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            renderGrid();
+            scrollToGrid();
         }
 
         function clearSearch() {
@@ -1520,6 +1557,7 @@
         function goHome() {
             query = '';
             currentCat = 'TODO';
+            currentPage = 1;
             document.getElementById('search').value = '';
             document.getElementById('hero').style.display = 'block';
             document.getElementById('anchor').style.display = 'block';
@@ -1544,8 +1582,8 @@
                 <div class="dash-premium">
                     <div style="text-align:center; margin-bottom:48px;">
                         <img src="logo.png" style="width:120px; height:120px; border-radius:50%; margin-bottom:24px; border:1px solid #EEE;">
-                        <h2 class="serif" style="font-size:32px; letter-spacing: -0.02em;">D LUX ATELIER</h2>
-                        <p style="font-size:10px; color:var(--text-muted); letter-spacing:0.3em; text-transform:uppercase; margin-top:8px;">Exclusividad & Alta Costura</p>
+                        <h2 class="serif" style="font-size:32px; letter-spacing: -0.02em;">D LUX</h2>
+                        <p style="font-size:10px; color:var(--text-muted); letter-spacing:0.3em; text-transform:uppercase; margin-top:8px;">Exclusividad & Elegancia</p>
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:40px;">
@@ -1590,7 +1628,7 @@
                     </div>
 
                     <button class="hero-btn" style="width:100%; margin-top:64px; border:1px solid #333;" onclick="init()">Sincronizar Bóveda</button>
-                    <p style="text-align:center; margin-top:48px; font-size:8px; color:#999; text-transform:uppercase; letter-spacing:0.4em;">© 2026 D LUX ATELIER - GLOBAL</p>
+                    <p style="text-align:center; margin-top:48px; font-size:8px; color:#999; text-transform:uppercase; letter-spacing:0.4em;">© 2026 D LUX - GLOBAL</p>
                 </div>
             `;
         }
@@ -1880,7 +1918,7 @@
 
             // 2. Prepare Professional WhatsApp Message
             let total = 0;
-            let m = `⚜️ *ORDEN DE COMPRA D LUX - ATELIER* ⚜️\n`;
+            let m = `⚜️ *ORDEN DE COMPRA D LUX* ⚜️\n`;
             m += `╔═══════════════════════════╗\n`;
             m += `  👤 *CLIENTE:* ${name.toUpperCase()}\n`;
             m += `  🆔 *CÉDULA:* ${idDoc}\n`;
@@ -2004,7 +2042,7 @@
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
             doc.setTextColor(...GRAY);
-            doc.text("ALTA COSTURA • EXCLUSIVIDAD • PRESTIGIO", 105, 43, { align: "center" });
+            doc.text("EXCLUSIVIDAD • ELEGANCIA • PRESTIGIO", 105, 43, { align: "center" });
 
             doc.setDrawColor(240);
             doc.line(20, 50, 190, 50);
@@ -2013,7 +2051,7 @@
             doc.setTextColor(...BLACK);
             doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
-            doc.text("ORDEN DE COMPRA ATELIER", 20, 60);
+            doc.text("ORDEN DE COMPRA", 20, 60);
 
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
@@ -2139,11 +2177,16 @@
             const arrivals = catalog.slice(-5).reverse();
             if (arrivals.length === 0) return;
 
-            track.innerHTML = arrivals.map(i => `
+            track.innerHTML = arrivals.map(i => {
+                const mainImg = i.IMG && i.IMG.length > 0 ? i.IMG[0] : null;
+                return `
                 <div class="slider-slide" onclick="openModal('${i.ID_SISTEMA}')">
-                    <img src="${typeof i.IMG === 'string' ? i.IMG : i.IMG.primary}" 
-                         onerror="handleImgError(this, ${JSON.stringify(i.IMG).replace(/"/g, '&quot;')})"
-                         loading="lazy">
+                    ${mainImg
+                        ? `<img src="${typeof mainImg === 'string' ? mainImg : mainImg.primary}" 
+                             onerror="handleImgError(this, ${JSON.stringify(mainImg).replace(/"/g, '&quot;')})"
+                             loading="lazy">`
+                        : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
+                    }
                     <div class="hero-overlay"></div>
                     <div class="slide-content">
                         <span class="slide-tag">Nueva Llegada</span>
@@ -2151,7 +2194,7 @@
                         <button class="hero-btn">Ver Detalles</button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
 
             dots.innerHTML = arrivals.map((_, idx) => `
                 <div class="dot-indicator ${idx === 0 ? 'active' : ''}" onclick="goToSlide(${idx})"></div>
