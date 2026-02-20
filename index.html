@@ -796,37 +796,49 @@
         /* Variant Modal */
         .modal-premium {
             position: fixed;
-            bottom: 24px;
+            bottom: 0;
             left: 50%;
-            transform: translate(-50%, 120%);
-            width: calc(100% - 32px);
+            transform: translate(-50%, 100%);
+            width: 100%;
             max-width: 500px;
-            max-height: 85dvh;
+            max-height: 90dvh;
             overflow-y: auto;
             background: #FFF;
             border: 1px solid #EEE;
-            border-radius: 24px;
+            border-bottom: none;
+            border-radius: 32px 32px 0 0;
             z-index: 2100;
-            padding: 32px 24px;
-            /* Reduced padding for mobile */
+            padding: 40px 24px 32px;
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 -20px 80px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (min-width: 768px) {
+            .modal-premium {
+                bottom: 50%;
+                transform: translate(-50%, 150%);
+                border-radius: 24px;
+                border-bottom: 1px solid #EEE;
+            }
+
+            .modal-premium.active {
+                transform: translate(-50%, 50%);
+            }
         }
 
         .modal-premium.active {
             transform: translate(-50%, 0);
         }
 
-        .modal-premium.active {
-            transform: translateY(0);
-        }
-
         .modal-handle {
             width: 40px;
             height: 4px;
-            background: #E0E0E0;
+            background: #DDD;
             border-radius: 2px;
-            margin: -12px auto 24px;
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         /* Responsive Modal Fixes */
@@ -834,6 +846,7 @@
             .modal-premium {
                 padding-bottom: calc(32px + var(--safe-bottom));
             }
+
             .drawer-luxury {
                 padding-bottom: var(--safe-bottom);
             }
@@ -870,25 +883,33 @@
         /* Toast */
         .premium-toast {
             position: fixed;
-            top: 24px;
+            top: 32px;
             left: 50%;
             transform: translate(-50%, -150%);
             opacity: 0;
             background: #000;
             border: 0.5px solid #333;
-            padding: 12px 24px;
-            border-radius: 0;
-            color: var(--text-pure);
-            font-size: 10px;
+            padding: 16px 32px;
+            border-radius: 40px;
+            color: #FFF;
+            font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.1em;
-            z-index: 3000;
-            transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+            z-index: 4000;
+            transition: all 0.5s cubic-bezier(0.2, 0, 0, 1);
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+            gap: 12px;
             pointer-events: none;
             text-transform: uppercase;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            min-width: 280px;
+            text-align: center;
+        }
+
+        .premium-toast span:last-child {
+            flex: 1;
         }
 
         .premium-toast.active {
@@ -1083,39 +1104,53 @@
                     <div id="checkout-actions">
                         <div class="form-group"
                             style="flex-direction: row; align-items: center; gap: 12px; margin-top: 10px;">
-                            <input type="checkbox" id="chk-invoice" style="width: 20px; height: 20px; accent-color: #000;">
+                            <input type="checkbox" id="chk-invoice"
+                                style="width: 20px; height: 20px; accent-color: #000;">
                             <label class="form-label" style="margin-bottom: 0;">¿Desea factura para su empresa?</label>
                         </div>
 
-                        <button class="luxury-btn" style="margin-top: 32px; height: 64px;" onclick="processFinalOrder()">
+                        <button class="luxury-btn" style="margin-top: 32px; height: 64px;"
+                            onclick="processFinalOrder()">
                             CONFIRMAR Y FINALIZAR $ <span id="chk-total">0</span>
                         </button>
-                        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 12px;">Al confirmar, se generará
+                        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 12px;">Al
+                            confirmar, se generará
                             su factura PDF y se abrirá WhatsApp.</p>
                     </div>
 
                     <!-- Final Choice Screen (Hidden by default) -->
-                    <div id="checkout-choice" style="display:none; flex-direction: column; gap: 20px; text-align: center; padding-top: 20px;">
-                        <span class="material-symbols-outlined" style="font-size:56px; color:#22c55e;">check_circle</span>
+                    <div id="checkout-choice"
+                        style="display:none; flex-direction: column; gap: 20px; text-align: center; padding-top: 20px;">
+                        <span class="material-symbols-outlined"
+                            style="font-size:56px; color:#22c55e;">check_circle</span>
                         <h3 class="serif" style="font-size:24px;">¡Pedido Preparado!</h3>
-                        <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Seleccione cómo desea finalizar el proceso:</p>
-                        
-                        <button class="luxury-btn" style="background:#25D366; display: flex; align-items: center; justify-content: center; gap: 12px;" onclick="finalizeLegacyWhatsApp()">
+                        <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Seleccione cómo desea
+                            finalizar el proceso:</p>
+
+                        <button class="luxury-btn"
+                            style="background:#25D366; display: flex; align-items: center; justify-content: center; gap: 12px;"
+                            onclick="finalizeLegacyWhatsApp()">
                             <span class="material-symbols-outlined">chat</span>
                             ENVIAR DIRECTO (WhatsApp)
                         </button>
-                        
-                        <button class="luxury-btn" style="background:#000; display: flex; align-items: center; justify-content: center; gap: 12px;" onclick="finalizeSharePDF()">
+
+                        <button class="luxury-btn"
+                            style="background:#000; display: flex; align-items: center; justify-content: center; gap: 12px;"
+                            onclick="finalizeSharePDF()">
                             <span class="material-symbols-outlined">share</span>
                             COMPARTIR CON FACTURA PDF
                         </button>
 
-                        <button class="pill" style="margin-top: 20px; border-bottom: 1px solid #CCC; width: fit-content; align-self: center;" onclick="backToEdit()">
+                        <button class="pill"
+                            style="margin-top: 20px; border-bottom: 1px solid #CCC; width: fit-content; align-self: center;"
+                            onclick="backToEdit()">
                             REGRESAR Y EDITAR
                         </button>
 
-                        <p style="font-size:10px; color:var(--text-muted); margin-top: 24px; padding: 0 20px; line-height: 1.5;">
-                            <b>Tip:</b> La opción "Enviar Directo" es para un contacto rápido. Use "Compartir" para enviar el archivo PDF profesional.
+                        <p
+                            style="font-size:10px; color:var(--text-muted); margin-top: 24px; padding: 0 20px; line-height: 1.5;">
+                            <b>Tip:</b> La opción "Enviar Directo" es para un contacto rápido. Use "Compartir" para
+                            enviar el archivo PDF profesional.
                         </p>
                     </div>
                 </div>
@@ -1270,6 +1305,10 @@
         <!-- Variant Selection -->
         <div class="modal-premium" id="modal">
             <div class="modal-handle"></div>
+            <div id="m-gallery"
+                style="margin: -12px -24px 24px; overflow-x: auto; display: flex; gap: 8px; padding: 0 24px;"
+                class="no-scrollbar"></div>
+
             <div style="margin-bottom:32px;">
                 <h4 class="serif" id="m-name" style="font-size:24px;">Producto</h4>
                 <p id="m-price" style="font-size:18px; color:var(--liquid-gold); font-weight:800; margin-top:4px;">$0.00
@@ -1312,44 +1351,43 @@
          * We use a triple-fallback strategy with logging.
          */
         function parseImage(url) {
-            if (!url) return '';
-            // Match standard ?id= or /d/ formats
-            let id = url.match(/[?&]id=([a-zA-Z0-9_-]{25,})/)?.[1] || url.match(/\/d\/([a-zA-Z0-9_-]{25,})/)?.[1];
+            if (!url) return [];
 
-            if (id) {
-                console.log(`DLUX Debug: Extracted ID [${id}] from URL.`);
-                // Return an object with options for the onerror handler
-                return {
-                    id: id,
-                    primary: `https://lh3.googleusercontent.com/d/${id}=w1000`, // CDN first (more reliable)
-                    fallback1: `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
-                    fallback2: `https://drive.google.com/uc?export=view&id=${id}`
-                };
-            }
-            return url; // External URL
+            // Handle multiple URLs (comma separated)
+            const urls = url.split(',').map(u => u.trim()).filter(Boolean);
+
+            return urls.map(u => {
+                let id = u.match(/[?&]id=([a-zA-Z0-9_-]{25,})/)?.[1] || u.match(/\/d\/([a-zA-Z0-9_-]{25,})/)?.[1];
+                if (id) {
+                    return {
+                        id: id,
+                        primary: `https://lh3.googleusercontent.com/d/${id}=w1000`,
+                        fallback1: `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
+                        fallback2: `https://drive.google.com/uc?export=view&id=${id}`
+                    };
+                }
+                return u; // External URL
+            });
         }
 
         function handleImgError(img, imgData) {
+            if (!imgData) return;
             if (typeof imgData === 'string') {
                 img.style.display = 'none';
-                img.nextElementSibling.style.display = 'flex';
+                if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
                 return;
             }
 
             const current = img.src;
             if (current === imgData.primary) {
-                // CDN failed, try thumbnail
                 img.src = imgData.fallback1;
             } else if (current === imgData.fallback1) {
-                // Thumbnail failed, try UC
                 img.src = imgData.fallback2;
             } else if (current === imgData.fallback2) {
-                // UC failed, try download (last resort)
                 img.src = `https://drive.google.com/uc?export=download&id=${imgData.id}`;
             } else {
-                console.error(`DLUX Media: Media inaccessible for ID ${imgData.id}.`);
                 img.style.display = 'none';
-                img.nextElementSibling.style.display = 'flex';
+                if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
             }
         }
 
@@ -1431,18 +1469,20 @@
             empty.style.display = 'none';
             cont.style.display = 'block';
 
-            cont.innerHTML = `<div class="grid-premium">${items.map((i, idx) => `
+            cont.innerHTML = `<div class="grid-premium">${items.map((i, idx) => {
+                const mainImg = i.IMG && i.IMG.length > 0 ? i.IMG[0] : null;
+                return `
                 <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openModal('${i.ID_SISTEMA}')">
                     <div class="img-box">
-                        ${i.IMG
-                    ? `<img src="${typeof i.IMG === 'string' ? i.IMG : i.IMG.primary}" 
-                            alt="${i.NOMBRE_PRENDA}" 
-                            referrerpolicy="no-referrer"
-                            onload="this.parentElement.classList.add('loaded')"
-                            onerror="handleImgError(this, ${JSON.stringify(i.IMG).replace(/"/g, '&quot;')})">
+                        ${mainImg
+                        ? `<img src="${typeof mainImg === 'string' ? mainImg : mainImg.primary}" 
+                                alt="${i.NOMBRE_PRENDA}" 
+                                referrerpolicy="no-referrer"
+                                onload="this.parentElement.classList.add('loaded')"
+                                onerror="handleImgError(this, ${JSON.stringify(mainImg).replace(/"/g, '&quot;')})">
                                <div class="img-fallback" style="display:none"><span class="material-symbols-outlined">identity_platform</span><p>PRIVATE MEDIA</p></div>`
-                    : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
-                }
+                        : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
+                    }
                         <div class="price-tag">$${parseFloat(i.PRECIO_VENTA).toFixed(0)}</div>
                         <button class="add-quick" onclick="event.stopPropagation(); openModal('${i.ID_SISTEMA}')">
                             <span class="material-symbols-outlined">add</span>
@@ -1457,7 +1497,8 @@
                         </div>
                     </div>
                 </div>
-            `).join('')}</div>`;
+            `;
+            }).join('')}</div>`;
         }
 
         function onSearch(v) {
@@ -1592,6 +1633,21 @@
             document.getElementById('m-name').innerText = item.NOMBRE_PRENDA;
             document.getElementById('m-price').innerText = `$${item.PRECIO_VENTA}`;
 
+            // Render Gallery
+            const gallery = document.getElementById('m-gallery');
+            if (item.IMG && item.IMG.length > 1) {
+                gallery.style.display = 'flex';
+                gallery.innerHTML = item.IMG.map(img => `
+                    <div style="min-width: 200px; height: 260px; border-radius: 16px; overflow: hidden; background: #F5F5F5;">
+                        <img src="${typeof img === 'string' ? img : img.primary}" 
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="handleImgError(this, ${JSON.stringify(img).replace(/"/g, '&quot;')})">
+                    </div>
+                `).join('');
+            } else {
+                gallery.style.display = 'none';
+            }
+
             const sGrid = document.getElementById('m-sizes');
             sGrid.innerHTML = item.SIZES.length > 0
                 ? item.SIZES.map(s => `<button class="variant-btn ${selectedSize == s ? 'selected' : ''}" onclick="pickS(this, '${s}')">${s}</button>`).join('')
@@ -1647,7 +1703,7 @@
                     sku: pending.SKU || pending.ID_SISTEMA,
                     n: pending.NOMBRE_PRENDA,
                     p: parseFloat(pending.PRECIO_VENTA),
-                    img: pending.IMG,
+                    img: (pending.IMG && pending.IMG.length > 0) ? pending.IMG[0] : null,
                     s: selectedSize,
                     c: selectedColor,
                     q: 1
@@ -1732,9 +1788,14 @@
 
         function showToast(m) {
             const t = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = m;
+            const msg = m || "Procesando...";
+            document.getElementById('toast-msg').innerText = msg;
             t.classList.add('active');
-            setTimeout(() => t.classList.remove('active'), 3000);
+            setTimeout(() => {
+                if (document.getElementById('toast-msg').innerText === msg) {
+                    t.classList.remove('active');
+                }
+            }, 3500);
         }
 
         // CHECKOUT FORM LOGIC
@@ -1851,7 +1912,7 @@
             document.getElementById('checkout-actions').style.display = 'none';
             document.querySelector('.checkout-form .form-group:has(#chk-name)').parentElement.querySelectorAll('.form-group').forEach(el => el.style.display = 'none');
             document.getElementById('checkout-choice').style.display = 'flex';
-            
+
             // Scroll to top of drawer to see success message
             document.getElementById('checkout-drawer').querySelector('.viewport').scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -1898,7 +1959,7 @@
             // Open WhatsApp Link
             window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`, '_blank');
             showToast("Procesando pedido...");
-            
+
             // On legacy, we can't detect return, but we can finalize after a delay or manually
             finalizeOrder();
         }
