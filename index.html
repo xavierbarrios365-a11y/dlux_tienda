@@ -590,6 +590,29 @@
             color: #000;
         }
 
+        .sold-out-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: #FFF;
+            padding: 8px 16px;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 5;
+            pointer-events: none;
+            border: 0.5px solid rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .img-box.pre-order img {
+            filter: grayscale(0.5) contrast(0.8);
+        }
+
         .info-premium {
             padding: 16px;
             flex: 1;
@@ -1514,7 +1537,9 @@
                 config = Array.isArray(dataRaw) ? {} : (dataRaw.config || {});
 
                 catalog = rawArray.filter(i => {
-                    const ok = (i.ESTADO || '').toUpperCase() === 'ACTIVO' && parseInt(i.STOCK) > 0;
+                    const s = (i.ESTADO || '').toUpperCase();
+                    // Allow both ACTIVO and AGOTADO to support Pre-orders
+                    const ok = s === 'ACTIVO' || s === 'AGOTADO';
                     return ok;
                 }).map(i => ({
                     ...i,
@@ -1526,7 +1551,11 @@
                 // Build grouped catalog
                 groupedCatalog = groupCatalog(catalog);
 
-                console.log(`DLUX Exclusive: ${catalog.length} artículos → ${groupedCatalog.length} modelos agrupados.`);
+                console.log(`Dlux Boutique v1.5: ${catalog.length} artículos → ${groupedCatalog.length} modelos agrupados.`);
+                const agotados = catalog.filter(i => parseInt(i.STOCK) === 0 || !i.STOCK);
+                if (agotados.length > 0) {
+                    console.log(`📌 Detectados ${agotados.length} artículos para Venta bajo Pedido:`, agotados.map(i => i.NOMBRE_PRENDA));
+                }
                 updateCartBadge();
                 initHeroSlider();
                 renderFilters();
@@ -1693,12 +1722,14 @@
                 const priceLabel = g.minPrice === g.maxPrice
                     ? `$${g.minPrice.toFixed(0)}`
                     : `Desde $${g.minPrice.toFixed(0)}`;
+                const isPreOrder = g.totalStock === 0;
                 const colorCount = g.allColors.length;
                 const colorLabel = colorCount > 1 ? `${colorCount} colores` : '';
                 const gIdx = groupedCatalog.indexOf(g);
                 return `
                 <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openGroupModal(${gIdx})">
-                    <div class="img-box">
+                    <div class="img-box ${isPreOrder ? 'pre-order' : ''}">
+                        ${isPreOrder ? '<div class="sold-out-badge">AGOTADO</div>' : ''}
                         ${mainImg
                         ? `<img src="${typeof mainImg === 'string' ? mainImg : mainImg.primary}" 
                                 alt="${g.name}" 
@@ -1708,9 +1739,9 @@
                                <div class="img-fallback" style="display:none"><span class="material-symbols-outlined">identity_platform</span><p>PRIVATE MEDIA</p></div>`
                         : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
                     }
-                        <div class="price-tag">${priceLabel}</div>
+                        <div class="price-tag">${isPreOrder ? 'BAJO PEDIDO' : priceLabel}</div>
                         <button class="add-quick" onclick="event.stopPropagation(); openGroupModal(${gIdx})">
-                            <span class="material-symbols-outlined">add</span>
+                            <span class="material-symbols-outlined">${isPreOrder ? 'shopping_basket' : 'add'}</span>
                         </button>
                     </div>
                     <div class="info-premium">
@@ -1718,8 +1749,8 @@
                         <h3 class="product-title">${g.name}</h3>
                         <div class="product-status">
                             ${colorLabel ? `<span style="font-size:9px; color:var(--liquid-gold); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">${colorLabel}</span>` : ''}
-                            <div class="dot ${g.totalStock < 5 ? 'dot-red' : 'dot-green'}"></div>
-                            <span class="status-text">${g.totalStock < 5 ? 'Últimas piezas' : 'Disponible'}</span>
+                            <div class="dot ${isPreOrder ? 'dot-red' : (g.totalStock < 5 ? 'dot-red' : 'dot-green')}"></div>
+                            <span class="status-text">${isPreOrder ? 'Venta bajo pedido' : (g.totalStock < 5 ? 'Últimas piezas' : 'Disponible')}</span>
                         </div>
                     </div>
                 </div>
@@ -2134,11 +2165,16 @@
 
         function updateModalBtn() {
             const btn = document.getElementById('m-confirm');
+            const stock = parseInt(pending.STOCK) || 0;
+            const isPreOrder = stock === 0;
+
             if (selectedSize && selectedColor) {
                 btn.disabled = false;
+                btn.innerText = isPreOrder ? "Comprar bajo pedido" : "Agregar a la Bolsa";
                 btn.onclick = addToCart;
             } else {
                 btn.disabled = true;
+                btn.innerText = "Seleccione Talla";
             }
         }
 
@@ -2146,8 +2182,9 @@
             const stockAvailable = parseInt(pending.STOCK) || 0;
             const existing = cart.find(i => i.id == pending.ID_SISTEMA && i.s == selectedSize && i.c == selectedColor);
             const currentQty = existing ? existing.q : 0;
+            const isPreOrder = stockAvailable === 0;
 
-            if (currentQty + 1 > stockAvailable) {
+            if (!isPreOrder && currentQty + 1 > stockAvailable) {
                 showToast(`Stock insuficiente (Solo ${stockAvailable} disponible)`);
                 return;
             }
@@ -2163,7 +2200,8 @@
                     img: (pending.IMG && pending.IMG.length > 0) ? pending.IMG[0] : null,
                     s: selectedSize,
                     c: selectedColor,
-                    q: 1
+                    q: 1,
+                    pre: isPreOrder
                 });
             }
             closeAll();
@@ -2209,7 +2247,7 @@
                         : ''}
                         </div>
                         <div style="flex:1;">
-                            <h4 class="serif" style="font-size:14px; color:#000;">${i.n}</h4>
+                            <h4 class="serif" style="font-size:14px; color:#000;">${i.n}${i.pre ? ' <span style="color:#ef4444; font-size:9px;">[BAJO PEDIDO]</span>' : ''}</h4>
                             <p style="font-size:9px; color:var(--text-muted); text-transform:uppercase; margin-top:2px;">SKU: ${i.sku} | ${i.s} / ${i.c}</p>
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
                                 <div style="display:flex; align-items:center; gap:12px;">
@@ -2342,7 +2380,7 @@
 
             // 2. Prepare Professional WhatsApp Message
             let total = 0;
-            let m = `⚜️ *ORDEN DE COMPRA D LUX* ⚜️\n`;
+            let m = `⚜️ *ORDEN DE COMPRA Dlux Boutique* ⚜️\n`;
             m += `╔═══════════════════════════╗\n`;
             m += `  👤 *CLIENTE:* ${name.toUpperCase()}\n`;
             m += `  🆔 *CÉDULA:* ${idDoc}\n`;
@@ -2358,7 +2396,7 @@
                 const itemTotal = (i.p * i.q).toFixed(0);
                 total += (i.p * i.q);
                 const imgUrl = i.img ? (typeof i.img === 'string' ? i.img : i.img.primary) : 'Sin imagen';
-                m += `🛍️ *${i.q}x ${i.n}*\n`;
+                m += `🛍️ *${i.q}x ${i.n}*${i.pre ? ' ⚠️ _[BAJO PEDIDO]_' : ''}\n`;
                 m += `   └ ` + (i.sku ? `[SKU: ${i.sku}] ` : ``) + `(${i.s} / ${i.c})\n`;
                 m += `   💰 *$${itemTotal}*\n`;
                 m += `   🔗 _Ver:_ ${imgUrl}\n\n`;
@@ -2661,8 +2699,8 @@
         // SERVICE WORKER REGISTRATION
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                console.log("Dlux Boutique v1.4 (Official Brand Launch)");
-                navigator.serviceWorker.register('./sw.js?v=1.4')
+                console.log("Dlux Boutique v1.5 (Forced Update)");
+                navigator.serviceWorker.register('./sw.js?v=1.5')
                     .then(reg => console.log('DLUX PWA: Service Worker registrado.'))
                     .catch(err => console.log('DLUX PWA: Error al registrar SW:', err));
             });
