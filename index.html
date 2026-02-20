@@ -1373,7 +1373,14 @@
 
         let catalog = [];
         let config = {};
-        let cart = JSON.parse(localStorage.getItem('dlux_cart') || '[]');
+        let cart = [];
+        try {
+            cart = JSON.parse(localStorage.getItem('dlux_cart') || '[]');
+            if (!Array.isArray(cart)) cart = [];
+        } catch (e) {
+            console.warn("DLUX: Bolsa corrupta, reiniciando.", e);
+            cart = [];
+        }
         let currentCat = 'TODO';
         let selectedSize = null;
         let selectedColor = null;
@@ -1478,12 +1485,20 @@
         function groupCatalog(items) {
             const map = new Map();
             items.forEach(item => {
-                const key = `${(item.NOMBRE_PRENDA || '').trim().toUpperCase()}|||${(item.MARCA || '').trim().toUpperCase()}`;
+                // SMARTER GROUPING: Remove extra spaces, ignore case, remove all non-alphanumeric for the key
+                const name = (item.NOMBRE_PRENDA || '').trim();
+                const marca = (item.MARCA || '').trim();
+
+                // If ID_MODELO exists in sheet, it's the gold standard. Otherwise clean name+brand.
+                const key = item.ID_MODELO
+                    ? String(item.ID_MODELO).trim().toUpperCase()
+                    : `${name.toUpperCase().replace(/[^A-Z0-9]/g, '')}|||${marca.toUpperCase().replace(/[^A-Z0-9]/g, '')}`;
+
                 if (!map.has(key)) {
                     map.set(key, {
                         key: key,
-                        name: item.NOMBRE_PRENDA,
-                        marca: item.MARCA || 'DLUX',
+                        name: name,
+                        marca: marca || 'DLUX',
                         linea: item.LINEA,
                         categoria: item.CATEGORIA,
                         variants: []
@@ -1494,11 +1509,12 @@
 
             // Convert to array, compute aggregate fields
             return Array.from(map.values()).map(g => {
-                const prices = g.variants.map(v => parseFloat(v.PRECIO_VENTA));
-                const totalStock = g.variants.reduce((a, v) => a + parseInt(v.STOCK), 0);
+                const prices = g.variants.map(v => parseFloat(v.PRECIO_VENTA) || 0);
+                const totalStock = g.variants.reduce((a, v) => a + (parseInt(v.STOCK) || 0), 0);
                 const allColors = [];
                 g.variants.forEach(v => {
-                    v.COLORS.forEach(c => {
+                    const colors = v.COLORS || [];
+                    colors.forEach(c => {
                         if (!allColors.includes(c)) allColors.push(c);
                     });
                 });
