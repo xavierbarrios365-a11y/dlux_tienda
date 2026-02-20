@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dlux-v1.2';
+const CACHE_NAME = 'dlux-v1.3';
 const ASSETS = [
   './',
   './index.html',
@@ -19,7 +19,7 @@ self.addEventListener('activate', (e) => {
       return Promise.all(keys.map((key) => {
         if (key !== CACHE_NAME) return caches.delete(key);
       }));
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
