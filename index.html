@@ -367,18 +367,28 @@
         }
 
         .hero-btn {
-            margin-top: 10px;
-            background: #000;
+            margin-top: 24px;
+            background: rgba(0, 0, 0, 0.4);
             color: #FFF;
-            border: none;
-            padding: 16px 32px;
+            border: 1px solid var(--liquid-gold);
+            padding: 16px 40px;
             font-size: 10px;
-            font-weight: 900;
+            font-weight: 800;
             letter-spacing: 0.3em;
             text-transform: uppercase;
-            border-radius: 0;
+            border-radius: 4px;
+            /* Subtle soft corner */
             cursor: pointer;
             width: fit-content;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .hero-btn:hover {
+            background: var(--liquid-gold);
+            color: #000;
+            transform: translateY(-2px);
         }
 
         /* Slider Styles */
@@ -458,8 +468,8 @@
 
         .slide-title {
             font-family: var(--font-serif);
-            font-size: 38px;
-            line-height: 1.1;
+            font-size: 42px;
+            line-height: 1;
             margin-bottom: 24px;
             color: #FFF;
             text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
@@ -1197,10 +1207,10 @@
                     <span class="cart-count" id="cart-badge">0</span>
                 </button>
             </div>
-            <div class="search-area" onclick="toggleSearch()" style="cursor:pointer">
+            <div class="search-area" onclick="switchToSearch()" style="cursor:pointer">
                 <div class="search-inner">
                     <span class="material-symbols-outlined" style="font-size:18px; color:#000">search</span>
-                    <div style="flex:1; font-size:13px; color:#999; padding-left:4px;">Buscar en nuestra colección...
+                    <div style="flex:1; font-size:13px; color:#999; padding-left:4px;">Buscar por Nombre, Marca o SKU...
                     </div>
                     <span id="active-filters-count" class="cart-count"
                         style="display:none; position:static; transform:none; margin-left:8px;">0</span>
@@ -1220,6 +1230,30 @@
                     <div class="slider-controls">
                         <div id="slider-dots" class="slider-dots"></div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Search Tools (Visible only in Search Tab) -->
+            <section id="search-view-tools" style="display:none; padding:24px 24px 0;">
+                <h2 class="serif" style="font-size:32px; margin-bottom:12px;">Búsqueda</h2>
+                <div class="form-group" style="margin-bottom:24px;">
+                    <input type="text" id="dedicated-search" class="form-input" placeholder="Nombre, Marca o SKU..."
+                        oninput="onDedicatedSearch(this.value)">
+                </div>
+
+                <p class="dash-label">Línea o Categoría</p>
+                <div class="variant-grid" id="search-linea-filter-main" style="margin-bottom:20px;"></div>
+
+                <p class="dash-label">Marca</p>
+                <div class="variant-grid" id="search-marca-filter-main" style="margin-bottom:20px;"></div>
+
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:0.5px solid #EEE; padding-top:16px;">
+                    <span id="results-count"
+                        style="font-size:11px; color:#999; letter-spacing:0.1em; text-transform:uppercase;">0
+                        RESULTADOS</span>
+                    <button class="pill" onclick="resetSearchFilters()"
+                        style="border:none; color:var(--liquid-gold); font-size:11px;">LIMPIAR TODO</button>
                 </div>
             </section>
 
@@ -1495,14 +1529,23 @@
         function renderGrid() {
             const cont = document.getElementById('grid-container');
             const empty = document.getElementById('empty');
+            const resCount = document.getElementById('results-count');
 
             let items = catalog;
 
             // 1. Filter by LINEA (Advanced Search or Pills)
             if (selectedLineas.length > 0) {
-                items = items.filter(i => selectedLineas.includes(i.LINEA));
+                items = items.filter(i => {
+                    const iLinea = (i.LINEA || '').toUpperCase().replace(/\s+/g, '');
+                    return selectedLineas.some(sl => sl.toUpperCase().replace(/\s+/g, '') === iLinea);
+                });
             } else if (currentCat !== 'TODO') {
-                items = items.filter(i => i.LINEA === currentCat || (currentCat === 'CALZADO' && (i.CATEGORIA === 'footwear' || i.LINEA === 'CALZADO')));
+                const cCat = currentCat.toUpperCase().replace(/\s+/g, '');
+                items = items.filter(i => {
+                    const iLinea = (i.LINEA || '').toUpperCase().replace(/\s+/g, '');
+                    const iCat = (i.CATEGORIA || '').toLowerCase().trim();
+                    return iLinea === cCat || (cCat === 'CALZADO' && (iCat === 'footwear' || iLinea === 'CALZADO'));
+                });
             }
 
             // 2. Filter by MARCA (Advanced Search)
@@ -1519,6 +1562,8 @@
                     return terms.every(term => text.includes(term));
                 });
             }
+
+            if (resCount) resCount.innerText = `${items.length} RESULTADO${items.length !== 1 ? 'S' : ''}`;
 
             if (items.length === 0) {
                 cont.style.display = 'none';
@@ -1610,21 +1655,26 @@
             query = '';
             currentCat = 'TODO';
             currentPage = 1;
-            document.getElementById('search').value = '';
+
+            // View toggles
             document.getElementById('hero').style.display = 'block';
             document.getElementById('anchor').style.display = 'block';
+            document.getElementById('search-view-tools').style.display = 'none';
+
             document.querySelector('.viewport').scrollTo({ top: 0, behavior: 'smooth' });
             updateTabs('home');
             renderUI();
         }
 
         function showAccount() {
-            const cont = document.getElementById('grid-container');
             const hero = document.getElementById('hero');
             const anchor = document.getElementById('anchor');
+            const tools = document.getElementById('search-view-tools');
 
             hero.style.display = 'none';
             anchor.style.display = 'none';
+            tools.style.display = 'none';
+
             updateTabs('account');
 
             const totalS = catalog.reduce((a, b) => a + parseInt(b.STOCK), 0);
@@ -1706,29 +1756,64 @@
             if (isOpen) renderCart();
         }
 
-        function toggleSearch() {
-            const d = document.getElementById('search-drawer');
-            const o = document.getElementById('overlay');
-            const isOpen = d.classList.toggle('active');
-            o.classList.toggle('active', isOpen);
-            if (isOpen) renderSearchDrawer();
+        function switchToSearch() {
+            closeAll();
+            const hero = document.getElementById('hero');
+            const anchor = document.getElementById('anchor');
+            const tools = document.getElementById('search-view-tools');
+
+            hero.style.display = 'none';
+            anchor.style.display = 'none';
+            tools.style.display = 'block';
+
+            updateTabs('search');
+            renderSearchTools();
+            renderGrid();
+
+            // Focus search input
+            setTimeout(() => document.getElementById('dedicated-search').focus(), 100);
         }
 
-        function renderSearchDrawer() {
+        function renderSearchTools() {
             const lineas = [...new Set(catalog.map(i => i.LINEA).filter(Boolean))].sort();
             const marcas = [...new Set(catalog.map(i => i.MARCA).filter(Boolean))].sort();
 
-            const lGrid = document.getElementById('search-linea-filter');
+            const lGrid = document.getElementById('search-linea-filter-main');
             lGrid.innerHTML = lineas.map(l => `
                 <button class="variant-btn ${selectedLineas.includes(l) ? 'selected' : ''}" 
-                        onclick="toggleFilter('linea', '${l}')">${l}</button>
+                        onclick="toggleFilterMain('linea', '${l}')">${l}</button>
             `).join('');
 
-            const mGrid = document.getElementById('search-marca-filter');
+            const mGrid = document.getElementById('search-marca-filter-main');
             mGrid.innerHTML = marcas.map(m => `
                 <button class="variant-btn ${selectedMarcas.includes(m) ? 'selected' : ''}" 
-                        onclick="toggleFilter('marca', '${m}')">${m}</button>
+                        onclick="toggleFilterMain('marca', '${m}')">${m}</button>
             `).join('');
+        }
+
+        function toggleFilterMain(type, val) {
+            if (type === 'linea') {
+                const idx = selectedLineas.indexOf(val);
+                if (idx > -1) selectedLineas.splice(idx, 1);
+                else selectedLineas.push(val);
+            } else {
+                const idx = selectedMarcas.indexOf(val);
+                if (idx > -1) selectedMarcas.splice(idx, 1);
+                else selectedMarcas.push(val);
+            }
+            renderSearchTools();
+            renderGrid();
+            updateSearchBadge();
+        }
+
+        function onDedicatedSearch(v) {
+            currentSearchQuery = v;
+            renderGrid();
+            updateSearchBadge();
+        }
+
+        function toggleSearch() {
+            switchToSearch();
         }
 
         function toggleFilter(type, val) {
