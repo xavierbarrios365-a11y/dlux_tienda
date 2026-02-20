@@ -1425,10 +1425,16 @@
                 style="margin: -12px -24px 24px; overflow-x: auto; display: flex; gap: 8px; padding: 0 24px;"
                 class="no-scrollbar"></div>
 
-            <div style="margin-bottom:32px;">
-                <h4 class="serif" id="m-name" style="font-size:24px;">Seleccione Artículo</h4>
-                <p id="m-price" style="font-size:18px; color:var(--liquid-gold); font-weight:800; margin-top:4px;">$---
-                </p>
+            <div style="margin-bottom:32px; display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h4 class="serif" id="m-name" style="font-size:24px;">Seleccione Artículo</h4>
+                    <p id="m-price" style="font-size:18px; color:var(--liquid-gold); font-weight:800; margin-top:4px;">
+                        $---</p>
+                </div>
+                <button class="add-quick" style="position:static; width:44px; height:44px;"
+                    onclick="shareActiveProduct()">
+                    <span class="material-symbols-outlined">share</span>
+                </button>
             </div>
 
             <p class="dash-label">Seleccionar Talla</p>
@@ -1561,6 +1567,13 @@
                 initHeroSlider();
                 renderFilters();
                 renderGrid();
+
+                // DEEP LINKING: Check if an ID is in the URL to auto-open
+                const urlParams = new URLSearchParams(window.location.search);
+                const shareId = urlParams.get('id');
+                if (shareId && catalog.length > 0) {
+                    setTimeout(() => openModal(shareId), 500);
+                }
             } catch (err) {
                 console.error("DLUX Sync Error:", err);
                 renderError(err.message);
@@ -1727,6 +1740,7 @@
                 const colorCount = g.allColors.length;
                 const colorLabel = colorCount > 1 ? `${colorCount} colores` : '';
                 const gIdx = groupedCatalog.indexOf(g);
+
                 return `
                 <div class="card-premium" style="animation-delay: ${idx * 0.1}s" onclick="openGroupModal(${gIdx})">
                     <div class="img-box ${isPreOrder ? 'pre-order' : ''}">
@@ -1736,14 +1750,18 @@
                                 alt="${g.name}" 
                                 referrerpolicy="no-referrer"
                                 onload="this.parentElement.classList.add('loaded')"
-                                onerror="handleImgError(this, ${JSON.stringify(mainImg).replace(/"/g, '&quot;')})">
-                               <div class="img-fallback" style="display:none"><span class="material-symbols-outlined">identity_platform</span><p>PRIVATE MEDIA</p></div>`
+                                onerror="handleImgError(this, ${JSON.stringify(mainImg).replace(/"/g, '&quot;')})">`
                         : `<div class="img-fallback"><span class="material-symbols-outlined">identity_platform</span><p>NO MEDIA</p></div>`
                     }
                         <div class="price-tag">${isPreOrder ? 'BAJO PEDIDO' : priceLabel}</div>
-                        <button class="add-quick" onclick="event.stopPropagation(); openGroupModal(${gIdx})">
-                            <span class="material-symbols-outlined">${isPreOrder ? 'shopping_basket' : 'add'}</span>
-                        </button>
+                        <div style="position:absolute; top:12px; right:12px; display:flex; flex-direction:column; gap:8px;">
+                            <button class="add-quick" style="position:static;" onclick="event.stopPropagation(); openGroupModal(${gIdx})">
+                                <span class="material-symbols-outlined">${isPreOrder ? 'shopping_basket' : 'add'}</span>
+                            </button>
+                            <button class="add-quick" style="position:static;" onclick="event.stopPropagation(); shareProduct('${g.primaryId}', '${g.name}', '${g.marca}')">
+                                <span class="material-symbols-outlined">share</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="info-premium">
                         <span class="product-label">${g.marca}</span>
@@ -2700,8 +2718,8 @@
         // SERVICE WORKER REGISTRATION
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                console.log("Dlux Boutique v1.6 (Deep Cache Purge)");
-                navigator.serviceWorker.register('./sw.js?v=1.6')
+                console.log("Dlux Boutique v1.7 (Luxury Share Update)");
+                navigator.serviceWorker.register('./sw.js?v=1.7')
                     .then(reg => console.log('DLUX PWA: Service Worker registrado.'))
                     .catch(err => console.log('DLUX PWA: Error al registrar SW:', err));
             });
