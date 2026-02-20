@@ -1074,8 +1074,8 @@
             position: fixed;
             bottom: 110px;
             right: 24px;
-            width: 64px;
-            height: 64px;
+            width: 54px;
+            height: 54px;
             background: var(--obsidian-base);
             border: 1px solid var(--liquid-gold);
             border-radius: 50%;
@@ -1084,7 +1084,7 @@
             justify-content: center;
             color: var(--liquid-gold);
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-            z-index: 999;
+            z-index: 2000;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
         }
@@ -1119,8 +1119,8 @@
             .fab-bag {
                 bottom: 40px;
                 right: 40px;
-                width: 72px;
-                height: 72px;
+                width: 60px;
+                height: 60px;
             }
         }
     </style>
@@ -1250,10 +1250,7 @@
                 <div class="logo-container">
                     <h1 class="main-logo" onclick="goHome()">D L U X</h1>
                 </div>
-                <button class="icon-btn cart-status" onclick="toggleCart()">
-                    <span class="material-symbols-outlined">shopping_bag</span>
-                    <span class="cart-count" id="cart-badge">0</span>
-                </button>
+                <div style="width:40px"></div>
             </div>
             <div class="search-area" onclick="switchToSearch()" style="cursor:pointer">
                 <div class="search-inner">
@@ -1428,6 +1425,7 @@
 
         let catalog = [];
         let config = {};
+        let toastTimeout = null;
         let cart = [];
         try {
             cart = JSON.parse(localStorage.getItem('dlux_cart') || '[]');
@@ -2230,12 +2228,13 @@
             const t = document.getElementById('toast');
             const msg = m || "Procesando...";
             document.getElementById('toast-msg').innerText = msg;
+
+            clearTimeout(toastTimeout);
             t.classList.add('active');
-            setTimeout(() => {
-                if (document.getElementById('toast-msg').innerText === msg) {
-                    t.classList.remove('active');
-                }
-            }, 3500);
+
+            toastTimeout = setTimeout(() => {
+                t.classList.remove('active');
+            }, 3000);
         }
 
         // CHECKOUT FORM LOGIC
