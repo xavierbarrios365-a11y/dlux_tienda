@@ -1068,6 +1068,61 @@
             color: #FFF;
             border-color: #000;
         }
+
+        /* ---- FAB BAG ---- */
+        .fab-bag {
+            position: fixed;
+            bottom: 30px;
+            right: 24px;
+            width: 64px;
+            height: 64px;
+            background: var(--obsidian-base);
+            border: 1px solid var(--liquid-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--liquid-gold);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .fab-bag:active {
+            transform: scale(0.85);
+        }
+
+        .fab-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: var(--liquid-gold);
+            color: #000;
+            font-size: 10px;
+            font-weight: 800;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--obsidian-base);
+        }
+
+        .fab-badge.active {
+            display: flex;
+        }
+
+        /* Responsive fab */
+        @media (min-width: 1024px) {
+            .fab-bag {
+                bottom: 40px;
+                right: 40px;
+                width: 72px;
+                height: 72px;
+            }
+        }
     </style>
 </head>
 
@@ -1317,7 +1372,7 @@
         <!-- Cart Drawer -->
         <div class="drawer-luxury" id="cart-drawer">
             <div class="drawer-header">
-                <h3 class="drawer-title">TU COLECCIÓN</h3>
+                <h3 class="drawer-title">MI BOLSA</h3>
                 <div style="display:flex; gap:8px;">
                     <button class="icon-btn" onclick="clearCart()" title="Vaciar Bolsa">
                         <span class="material-symbols-outlined">delete_sweep</span>
@@ -2089,14 +2144,22 @@
             closeAll();
             updateCartBadge();
             showToast(`"${pending.NOMBRE_PRENDA}" agregado a la bolsa.`);
-            toggleCart();
+            // toggleCart(); // Comentado para no interrumpir el flujo del usuario
         }
 
         function updateCartBadge() {
             const b = document.getElementById('cart-badge');
+            const fb = document.getElementById('fab-badge');
             const count = cart.reduce((a, b) => a + b.q, 0);
+
             b.innerText = count;
             b.classList.toggle('active', count > 0);
+
+            if (fb) {
+                fb.innerText = count;
+                fb.classList.toggle('active', count > 0);
+            }
+
             localStorage.setItem('dlux_cart', JSON.stringify(cart));
         }
 
