@@ -1714,9 +1714,6 @@
 
             updateTabs('account');
 
-            const totalS = catalog.reduce((a, b) => a + parseInt(b.STOCK), 0);
-            const totalV = catalog.reduce((a, b) => a + (parseFloat(b.PRECIO_VENTA) * parseInt(b.STOCK)), 0);
-
             cont.innerHTML = `
                 <div class="dash-premium">
                     <div style="text-align:center; margin-bottom:48px;">
@@ -1729,47 +1726,109 @@
                         <section>
                             <h3 class="dash-label" style="margin-bottom:16px;">Nuestra Filosofía</h3>
                             <p style="font-size:14px; line-height:1.6; font-weight:300; color:#333;">
-                                D LUX no es solo una tienda, es una curaduría de estilo. 
-                                Nuestra misión es vestir a la élite con piezas que trasciendan las tendencias, 
-                                manteniendo la artesanía y la exclusividad en el centro de todo lo que hacemos.
+                                D LUX es una curaduría de estilo diseñada para quienes valoran la distinción. 
+                                Nuestra misión es ofrecer piezas exclusivas que trasciendan las tendencias, 
+                                manteniendo la artesanía y la elegancia en el centro de nuestra propuesta.
                             </p>
                         </section>
 
-                        <section style="display:grid; grid-template-columns:1fr; gap:24px; border-top:0.5px solid #EEE; padding-top:32px;">
+                        <section style="display:grid; grid-template-columns:1fr; gap:32px; border-top:0.5px solid #EEE; padding-top:32px;">
                             <div>
-                                <h3 class="dash-label">Contacto Directo</h3>
-                                <p style="font-size:16px; margin-top:8px;">+58 424-5637616</p>
+                                <h3 class="dash-label" style="margin-bottom:12px;">Atención al Cliente</h3>
+                                <div style="display:flex; flex-direction:column; gap:16px;">
+                                    <button class="hero-btn" style="width:100%; justify-content:center; gap:10px;" onclick="window.open('https://wa.me/${WHATSAPP}')">
+                                        <span class="material-symbols-outlined">chat</span> Contactar por WhatsApp
+                                    </button>
+                                    <button class="hero-btn" style="width:100%; border:1px solid #333; justify-content:center;" onclick="location.href='mailto:info@dlux.com'">
+                                        <span class="material-symbols-outlined">mail</span> Enviar Email
+                                    </button>
+                                </div>
                             </div>
+
                             <div>
-                                <h3 class="dash-label">Ubicación</h3>
-                                <p style="font-size:16px; margin-top:8px;">Sede Privada - Araure, Portuguesa</p>
-                                <p style="font-size:10px; color:var(--text-muted); margin-top:4px;">Atención bajo cita previa</p>
+                                <h3 class="dash-label" style="margin-bottom:12px;">Ubicación</h3>
+                                <div style="background:var(--obsidian-soft); padding:20px; border-radius:16px;">
+                                    <p style="font-size:15px; font-weight:500;">Sede Araure</p>
+                                    <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Portuguesa, Venezuela</p>
+                                    <p style="font-size:11px; color:var(--liquid-gold); margin-top:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em;">Showroom bajo cita previa</p>
+                                    <button class="hero-btn" style="padding: 8px 16px; font-size:11px; margin-top:16px; width:auto;" onclick="window.open('https://maps.google.com')">
+                                        Ver en Mapa
+                                    </button>
+                                </div>
                             </div>
                         </section>
 
                         <section style="border-top:0.5px solid #EEE; padding-top:32px;">
-                            <h3 class="dash-label" style="margin-bottom:24px;">D LUX Insight (Admin)</h3>
-                            <div class="dash-card" style="background:none; border:none; border-left: 2px solid var(--liquid-gold); border-radius:0; padding: 0 0 0 24px; margin-bottom:32px;">
-                                <p class="dash-label">Valor del Inventario</p>
-                                <p class="dash-val" style="font-size:40px; font-weight:300; letter-spacing:-0.03em;">$${totalV.toLocaleString()}</p>
+                            <h3 class="dash-label" style="margin-bottom:20px;">Redes Sociales</h3>
+                            <div style="display:flex; gap:16px;">
+                                <button class="variant-btn" onclick="window.open('https://instagram.com/dlux.ve')">Instagram</button>
+                                <button class="variant-btn" onclick="window.open('https://tiktok.com/@dlux.ve')">TikTok</button>
                             </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px;">
-                                <div>
-                                    <p class="dash-label">Modelos</p>
-                                    <p style="font-size:24px; font-weight:300; margin-top:8px;">${catalog.length}</p>
-                                </div>
-                                <div>
-                                    <p class="dash-label">Stock</p>
-                                    <p style="font-size:24px; font-weight:300; margin-top:8px;">${totalS}</p>
-                                </div>
+                        </section>
+
+                        <section id="my-orders-section" style="border-top:0.5px solid #EEE; padding-top:32px; display:none;">
+                            <h3 class="dash-label" style="margin-bottom:20px;">Mis Pedidos Recientes</h3>
+                            <div id="my-orders-list" style="display:flex; flex-direction:column; gap:12px;">
+                                <!-- Pedidos dinámicos -->
+                            </div>
+                        </section>
+
+                        <section style="border-top:0.5px solid #EEE; padding-top:32px;">
+                            <div style="display:flex; flex-direction:column; gap:12px;">
+                                <a href="javascript:void(0)" onclick="showPolicy('tc')" style="color:var(--text-muted); font-size:12px;">Términos y Condiciones</a>
+                                <a href="javascript:void(0)" onclick="showPolicy('pp')" style="color:var(--text-muted); font-size:12px;">Política de Privacidad</a>
                             </div>
                         </section>
                     </div>
 
-                    <button class="hero-btn" style="width:100%; margin-top:64px; border:1px solid #333;" onclick="init()">Sincronizar Bóveda</button>
-                    <p style="text-align:center; margin-top:48px; font-size:8px; color:#999; text-transform:uppercase; letter-spacing:0.4em;">© 2026 D LUX - GLOBAL</p>
+                    <p style="text-align:center; margin-top:64px; font-size:8px; color:#999; text-transform:uppercase; letter-spacing:0.4em;">© 2026 D LUX - GLOBAL</p>
                 </div>
             `;
+            renderMyOrders();
+        }
+
+        function showPolicy(type) {
+            const title = type === 'tc' ? 'Términos y Condiciones' : 'Política de Privacidad';
+            const content = type === 'tc'
+                ? `Al acceder a D LUX, aceptas que nuestras piezas son exclusivas y de disponibilidad limitada. 
+                   Las órdenes por WhatsApp representan una solicitud de reserva sujeta a confirmación final de stock y pago.`
+                : `En D LUX valoramos tu privacidad. Tus datos de contacto solo se utilizan para procesar tus pedidos 
+                   y brindarte una atención personalizada vía WhatsApp. No compartimos tu información con terceros.`;
+
+            // Reutilizamos la estructura del modal de éxito para mostrar políticas rápidamente
+            const overlay = document.getElementById('overlay');
+            const cart = document.getElementById('cart-drawer');
+            closeAll();
+
+            const modal = document.createElement('div');
+            modal.id = 'policy-modal';
+            modal.className = 'modal active';
+            modal.style.padding = '40px';
+            modal.innerHTML = `
+                <h2 class="serif" style="font-size:24px; margin-bottom:20px; color:var(--obsidian);">${title}</h2>
+                <div style="font-size:14px; line-height:1.7; color:#555; margin-bottom:30px;">${content}</div>
+                <button class="hero-btn" style="width:100%;" onclick="this.parentElement.remove(); document.getElementById('overlay').classList.remove('active');">Cerrar</button>
+            `;
+            document.body.appendChild(modal);
+            overlay.classList.add('active');
+        }
+
+        function renderMyOrders() {
+            const orders = JSON.parse(localStorage.getItem('dlux_history') || '[]');
+            const cont = document.getElementById('my-orders-list');
+            const section = document.getElementById('my-orders-section');
+            if (orders.length === 0) return;
+
+            section.style.display = 'block';
+            cont.innerHTML = orders.reverse().slice(0, 3).map(o => `
+                <div style="background:#FAFAFA; padding:16px; border-radius:12px; border:1px solid #F0F0F0;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${o.date}</span>
+                        <span style="font-size:10px; font-weight:700; color:var(--liquid-gold);">#${o.id}</span>
+                    </div>
+                    <p style="font-size:13px; font-weight:500;">${o.total} - ${o.items} piezas</p>
+                </div>
+            `).join('');
         }
 
         function updateTabs(t) {
@@ -2283,6 +2342,19 @@
         }
 
         function finalizeOrder() {
+            // Guardar en historial local antes de limpiar
+            const history = JSON.parse(localStorage.getItem('dlux_history') || '[]');
+            const totalItems = cart.reduce((a, b) => a + b.q, 0);
+            const totalVal = document.getElementById('cart-total').innerText;
+
+            history.push({
+                id: _tempOrderId || 'N/A',
+                date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
+                total: totalVal,
+                items: totalItems
+            });
+            localStorage.setItem('dlux_history', JSON.stringify(history));
+
             closeAll();
             cart = [];
             updateCartBadge();
