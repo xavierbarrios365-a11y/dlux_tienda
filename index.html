@@ -422,11 +422,11 @@
 
         .hero-overlay {
             position: absolute;
-            top: 0;
+            bottom: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(235, 235, 235, 0.4) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2) 100%);
+            height: 85%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.45) 50%, rgba(0, 0, 0, 0) 100%);
             z-index: 2;
             pointer-events: none;
         }
@@ -437,7 +437,8 @@
             left: 24px;
             right: 24px;
             z-index: 5;
-            color: #000;
+            color: #FFF;
+            /* Pure white for contrast */
         }
 
         .slide-tag {
@@ -448,16 +449,17 @@
             color: var(--liquid-gold);
             margin-bottom: 8px;
             display: block;
-            text-shadow: 0 1px 1px rgba(255, 255, 255, 1), 0 2px 8px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            /* Stronger shadow */
         }
 
         .slide-title {
             font-family: var(--font-serif);
             font-size: 38px;
             line-height: 1.1;
-            margin-bottom: 16px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            /* Improved contrast */
+            margin-bottom: 24px;
+            color: #FFF;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
         }
 
         /* ---- NAVIGATION PILLS ---- */
@@ -827,21 +829,24 @@
             box-shadow: 0 -20px 80px rgba(0, 0, 0, 0.15);
         }
 
+        .modal-premium.active {
+            transform: translate(-50%, 0);
+        }
+
         @media (min-width: 768px) {
             .modal-premium {
-                bottom: 50%;
-                transform: translate(-50%, 150%);
+                bottom: auto;
+                top: 50%;
+                transform: translate(-50%, 100vh);
+                /* Start off-screen bottom */
                 border-radius: 24px;
-                border-bottom: 1px solid #EEE;
+                border: 1px solid #EEE;
             }
 
             .modal-premium.active {
-                transform: translate(-50%, 50%);
+                transform: translate(-50%, -50%);
+                /* Centered */
             }
-        }
-
-        .modal-premium.active {
-            transform: translate(-50%, 0);
         }
 
         .modal-handle {
@@ -1328,8 +1333,8 @@
                 class="no-scrollbar"></div>
 
             <div style="margin-bottom:32px;">
-                <h4 class="serif" id="m-name" style="font-size:24px;">Producto</h4>
-                <p id="m-price" style="font-size:18px; color:var(--liquid-gold); font-weight:800; margin-top:4px;">$0.00
+                <h4 class="serif" id="m-name" style="font-size:24px;">Seleccione Artículo</h4>
+                <p id="m-price" style="font-size:18px; color:var(--liquid-gold); font-weight:800; margin-top:4px;">$---
                 </p>
             </div>
 
@@ -1615,13 +1620,13 @@
                             </div>
                             <div>
                                 <h3 class="dash-label">Ubicación</h3>
-                                <p style="font-size:16px; margin-top:8px;">Atelier Privado - Araure, Portuguesa</p>
+                                <p style="font-size:16px; margin-top:8px;">Sede Privada - Araure, Portuguesa</p>
                                 <p style="font-size:10px; color:var(--text-muted); margin-top:4px;">Atención bajo cita previa</p>
                             </div>
                         </section>
 
                         <section style="border-top:0.5px solid #EEE; padding-top:32px;">
-                            <h3 class="dash-label" style="margin-bottom:24px;">Atelier Insight (Admin)</h3>
+                            <h3 class="dash-label" style="margin-bottom:24px;">D LUX Insight (Admin)</h3>
                             <div class="dash-card" style="background:none; border:none; border-left: 2px solid var(--liquid-gold); border-radius:0; padding: 0 0 0 24px; margin-bottom:32px;">
                                 <p class="dash-label">Valor del Inventario</p>
                                 <p class="dash-val" style="font-size:40px; font-weight:300; letter-spacing:-0.03em;">$${totalV.toLocaleString()}</p>
@@ -1675,7 +1680,11 @@
 
         function openModal(id) {
             const item = catalog.find(i => String(i.ID_SISTEMA) == String(id));
-            if (!item) return;
+            if (!item) {
+                console.error("DLUX: ID no encontrado", id);
+                closeAll();
+                return;
+            }
             pending = item;
             selectedSize = item.SIZES.length > 1 ? null : (item.SIZES[0] || 'Única');
             selectedColor = item.COLORS.length > 1 ? null : (item.COLORS[0] || 'Original');
@@ -2241,6 +2250,15 @@
 
         // INIT
         init();
+
+        // SERVICE WORKER REGISTRATION
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('DLUX PWA: Service Worker registrado.'))
+                    .catch(err => console.log('DLUX PWA: Error al registrar SW:', err));
+            });
+        }
     </script>
 </body>
 
