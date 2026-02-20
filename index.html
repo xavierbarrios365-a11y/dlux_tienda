@@ -1507,6 +1507,7 @@
         async function init() {
             try {
                 const res = await fetch(API);
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 const dataRaw = await res.json();
 
                 const rawArray = Array.isArray(dataRaw) ? dataRaw : (dataRaw.catalog || []);
@@ -1529,10 +1530,24 @@
                 updateCartBadge();
                 initHeroSlider();
                 renderUI();
-            } catch (e) {
-                console.error("Error de conectividad:", e);
-                renderError();
+            } catch (err) {
+                console.error("DLUX Sync Error:", err);
+                renderError(err.message);
             }
+        }
+
+        function renderError(msg) {
+            document.getElementById('grid-container').innerHTML = `
+                <div style="padding:100px 40px; text-align:center;">
+                    <span class="material-symbols-outlined" style="font-size:48px; color:var(--text-muted)">cloud_off</span>
+                    <p style="margin-top:16px; font-size:12px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">Bóveda Inaccesible</p>
+                    <p style="font-size:10px; color:#ef4444; margin-top:8px; font-weight:600;">DETALLE: ${msg || 'Error de conexión'}</p>
+                    <button class="hero-btn" style="margin:24px auto 0; padding:12px 24px;" onclick="location.reload()">Reintentar Sincronización</button>
+                    <p style="font-size:8px; color:var(--text-muted); margin-top:20px; line-height:1.5;">
+                        Si el error persiste, verifique que el Google Apps Script esté publicado como "WebApp" y con acceso para "Anyone".
+                    </p>
+                </div>
+            `;
         }
 
         function groupCatalog(items) {
@@ -2567,16 +2582,6 @@
                 pdfBlob: doc.output('blob'),
                 orderId: orderId
             };
-        }
-
-        function renderError() {
-            document.getElementById('grid-container').innerHTML = `
-                <div style="padding:100px 40px; text-align:center;">
-                    <span class="material-symbols-outlined" style="font-size:48px; color:var(--text-muted)">cloud_off</span>
-                    <p style="margin-top:16px; font-size:12px; color:var(--text-muted); letter-spacing:0.1em;">Bóveda actualmente inaccesible</p>
-                    <button class="hero-btn" style="margin:24px auto 0; padding:12px 24px;" onclick="init()">Reintentar Sincronización</button>
-                </div>
-            `;
         }
 
         // HERO SLIDER LOGIC
