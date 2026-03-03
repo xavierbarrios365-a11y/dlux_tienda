@@ -1449,8 +1449,9 @@
     </div>
 
     <script>
-        // CONFIG
-        const API = "https://script.google.com/macros/s/AKfycbyTaPDwM3geTMyA76jaZSeaf1tC7RPRBfUbhPipwWJWktjfzYQH3C38FAfY3DbCXQpt/exec";
+        // CONFIG (Supabase Integration)
+        const SUPABASE_URL = "https://coiyjgchtyvpgkfdcwyg.supabase.co/rest/v1/products?select=*";
+        const SUPABASE_KEY = "sb_publishable_P66zVbRNU_J47q_jsejrvg_AWtS3dEG";
         const WHATSAPP = "584245637616"; // SET YOUR NUMBER HERE
 
         let catalog = [];
@@ -1536,12 +1537,34 @@
 
         async function init() {
             try {
-                const res = await fetch(API + (API.includes('?') ? '&' : '?') + 'v=' + Date.now(), { cache: "no-store" });
+                // Fetch from Supabase
+                const res = await fetch(SUPABASE_URL, {
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`
+                    },
+                    cache: "no-store"
+                });
+
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 const dataRaw = await res.json();
 
-                const rawArray = Array.isArray(dataRaw) ? dataRaw : (dataRaw.catalog || []);
-                config = Array.isArray(dataRaw) ? {} : (dataRaw.config || {});
+                // Map Supabase schema back to Legacy Google Sheets schema for the UI
+                const rawArray = dataRaw.map(item => ({
+                    NOMBRE_PRENDA: item.name,
+                    SKU: item.sku,
+                    CATEGORIA: item.category,
+                    MARCA: item.brand,
+                    LINEA: item.line,
+                    TALLES: item.sizes,
+                    COLORES: item.colors,
+                    PRECIO_VENTA: item.price,
+                    STOCK_FISICO: item.stock,
+                    FOTOGRAFIA: item.image_url,
+                    ESTADO: item.status === 'active' ? 'ACTIVO' : 'AGOTADO'
+                }));
+
+                config = {}; // We can hardcode categories or extract from rawArray below if needed
 
                 catalog = rawArray.filter(i => {
                     const s = (i.ESTADO || '').toUpperCase();
@@ -2396,6 +2419,35 @@
             _tempPdfBlob = result.pdfBlob;
             _tempOrderId = result.orderId;
             _tempFileName = `DLUX_Pedido_${_tempOrderId}.pdf`;
+
+            // Save to Supabase
+            try {
+                const totalAmount = cart.reduce((a, b) => a + (b.p * b.q), 0);
+                const orderPayload = {
+                    order_number: _tempOrderId,
+                    customer_name: name,
+                    customer_doc: idDoc,
+                    payment_method: payment,
+                    delivery_mode: deliveryMode,
+                    delivery_detail: deliveryDetail,
+                    needs_invoice: needsInvoice,
+                    total: totalAmount,
+                    items: cart,
+                    status: 'pending' // pending, paid, shipped, delivered, cancelled
+                };
+
+                await fetch("https://coiyjgchtyvpgkfdcwyg.supabase.co/rest/v1/orders", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify(orderPayload)
+                });
+            } catch (err) {
+                console.error("Error saving order to Supabase:", err);
+            }
 
             // 2. Prepare Professional WhatsApp Message
             let total = 0;
