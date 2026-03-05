@@ -1550,19 +1550,31 @@
                 const dataRaw = await res.json();
 
                 // Map Supabase schema back to Legacy Google Sheets schema for the UI
-                const rawArray = dataRaw.map(item => ({
-                    NOMBRE_PRENDA: item.name,
-                    SKU: item.sku,
-                    CATEGORIA: item.category,
-                    MARCA: item.brand,
-                    LINEA: item.line,
-                    TALLES: item.sizes,
-                    COLORES: item.colors,
-                    PRECIO_VENTA: item.price,
-                    STOCK_FISICO: item.stock,
-                    FOTOGRAFIA: item.image_url,
-                    ESTADO: item.status === 'active' ? 'ACTIVO' : 'AGOTADO'
-                }));
+                const rawArray = dataRaw.map(item => {
+                    // Normalize the image URL (Supabase uses 'images' array or 'image_url' string)
+                    let foto = '';
+                    if (item.images && item.images.length > 0) {
+                        foto = item.images.join(',');
+                    } else if (item.image_url) {
+                        foto = item.image_url;
+                    }
+
+                    return {
+                        ID_SISTEMA: item.id,
+                        NOMBRE_PRENDA: item.name,
+                        SKU: item.sku,
+                        CATEGORIA: item.category,
+                        MARCA: item.brand,
+                        LINEA: item.gender || 'Boutique', // Fallback for line mapping
+                        TALLES_UNIFICADAS: item.size || 'Única',
+                        COLORES: item.color || 'Único',
+                        PRECIO_VENTA: item.price,
+                        STOCK: item.stock,
+                        STOCK_FISICO: item.stock,
+                        URL_IMAGEN: foto, // Use the proper mapped photo
+                        ESTADO: item.status === 'active' ? 'ACTIVO' : 'AGOTADO'
+                    };
+                });
 
                 config = {}; // We can hardcode categories or extract from rawArray below if needed
 
@@ -1573,15 +1585,15 @@
                     return ok;
                 }).map(i => ({
                     ...i,
-                    IMG: parseImage(i.URL_IMAGEN),
-                    SIZES: i.TALLAS_UNIFICADAS ? i.TALLAS_UNIFICADAS.toString().split(',').map(s => s.trim()).filter(Boolean) : [],
+                    IMG: parseImage(i.URL_IMAGEN), // Now URL_IMAGEN exists
+                    SIZES: i.TALLES_UNIFICADAS ? i.TALLES_UNIFICADAS.toString().split(',').map(s => s.trim()).filter(Boolean) : [],
                     COLORS: i.COLORES ? i.COLORES.toString().split(',').map(c => c.trim()).filter(Boolean) : ['Único']
                 })).reverse(); // Newest first
 
                 // Build grouped catalog
                 groupedCatalog = groupCatalog(catalog);
 
-                console.log(`Dlux Boutique v1.6: ${catalog.length} artículos → ${groupedCatalog.length} modelos agrupados.`);
+                console.log(`Dlux Boutique v2.0: ${catalog.length} artículos → ${groupedCatalog.length} modelos agrupados.`);
                 const agotados = catalog.filter(i => parseInt(i.STOCK) === 0 || !i.STOCK);
                 if (agotados.length > 0) {
                     console.log(`📌 Detectados ${agotados.length} artículos para Venta bajo Pedido:`, agotados.map(i => i.NOMBRE_PRENDA));
